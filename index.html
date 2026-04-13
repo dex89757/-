@@ -25,8 +25,9 @@
         #personModal, #historyEditModal { z-index: 4000; }
         #matchModal { z-index: 3000; }
         .modal-content { background: #1c1c1e; width: 95%; max-width: 600px; padding: 20px; border-radius: 25px; max-height: 90vh; overflow-y: auto; }
-        .b-text { color: var(--orange); font-size: 22px; display: block; line-height: 1.2; }
-        .busy-text { color: var(--red); font-size: 22px; display: block; font-weight: bold; line-height: 1.2; }
+        .b-text { color: var(--orange); font-size: 18px; display: block; line-height: 1.2; }
+        .busy-text { color: var(--red); font-size: 20px; display: block; font-weight: bold; line-height: 1.2; }
+        .tentative-text { color: var(--yellow); font-size: 18px; display: block; font-weight: normal; line-height: 1.2; }
         .tag-btn { background:#333; padding:15px 0; color:#eee; border-radius:10px; border:1.5px solid transparent; font-size: 24px; font-weight: bold; cursor: pointer; }
         .btn-edit { color: var(--blue); border: 1px solid var(--blue); padding: 8px 15px; border-radius: 8px; font-size: 18px; background: none; cursor: pointer; }
         .btn-del { color: var(--red); border: 1px solid var(--red); padding: 8px 15px; border-radius: 8px; font-size: 18px; background: none; cursor: pointer; }
@@ -48,7 +49,7 @@
         .report-select { flex: 1; background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 10px; font-size: 18px; }
     </style>
 </head>
-<body>
+<body onclick="handleGlobalClick(event)">
     <div id="toast">成功</div>
 
     <div id="page-rank" class="page active">
@@ -165,6 +166,9 @@
         const staffIds = [0, 1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101];
         const specialIds = [0, -1, -2]; 
         const getSpecialName = (id) => id === 0 ? '不指定' : (id === -1 ? '指男' : '指女');
+        
+        const maleIds = [1, 5, 7, 9, 10, 11, 12, 13];
+        const femaleIds = [2, 38, 100, 101];
 
         let selIds=[], isBoss=false, editBookId=null, matchSels=[]; 
         let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false};
@@ -188,7 +192,23 @@
         };
 
         const save = () => { localStorage.setItem('massageData', JSON.stringify(staffData)); localStorage.setItem('massageHistory', JSON.stringify(historyData)); };
-        const closeM = (m) => { document.getElementById(m).style.display='none'; };
+        
+        function handleGlobalClick(e) {
+            if (e.target.classList.contains('modal')) {
+                const modalId = e.target.id;
+                if (modalId === 'personModal') setPersonCount(0);
+                else if (modalId === 'historyEditModal') closeM('historyEditModal');
+                else if (modalId === 'amtModal') closeM('amtModal');
+                else closeM(modalId);
+            }
+        }
+
+        const closeM = (m) => { 
+            if(m === 'matchModal') { matchSels = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; }
+            const el = document.getElementById(m);
+            if(el) el.style.display='none'; 
+            render();
+        };
         const showT = (m) => { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('active'); setTimeout(()=>t.classList.remove('active'),2000); };
 
         function initReportFilters() {
@@ -364,27 +384,109 @@
             if(document.getElementById('settleTitle')) document.getElementById('settleTitle').innerText = isBoss ? '店內結帳' : '師傅結帳';
             if(document.getElementById('modeBtn')) document.getElementById('modeBtn').innerText = isBoss ? '切換師傅' : '切換店內';
             staffData.forEach(s => { s.bookings = s.bookings.filter(b => (new Date(`${b.date}T${b.time}`).getTime() + (b.dur * 60000)) > nowMs); });
+            
+            const tentativeMap = {}; 
+            const spReqs = []; 
+            specialIds.forEach(spId => {
+                const s = staffData.find(x => x.id === spId);
+                if (s) s.bookings.forEach(b => spReqs.push({...b, spId}));
+            });
+            spReqs.sort((a,b) => a.time.localeCompare(b.time));
+
+            const sortedRankCandidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
+                const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
+                return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
+            });
+
+            const tentDetailsForStaff = {}; 
+
+            spReqs.forEach(req => {
+                const reqStart = new Date(`${req.date}T${req.time}`).getTime();
+                const reqEnd = reqStart + (req.dur * 60000);
+                const targetSid = sortedRankCandidates.find(s => {
+                    if (!tentDetailsForStaff[s.id]) tentDetailsForStaff[s.id] = [];
+                    const staffTentative = tentDetailsForStaff[s.id];
+                    if (req.spId === -1 && !maleIds.includes(s.id)) return false;
+                    if (req.spId === -2 && !femaleIds.includes(s.id)) return false;
+                    const hasConflictWithBooking = s.bookings.some(b => {
+                        const bS = new Date(`${b.date}T${b.time}`).getTime();
+                        const bE = bS + (b.dur * 60000);
+                        return (reqStart < bE && reqEnd > bS);
+                    });
+                    if (hasConflictWithBooking) return false;
+                    const hasConflictWithTentative = staffTentative.some(t => {
+                        const tS = new Date(`${t.date}T${t.time}`).getTime();
+                        const tE = tS + (t.dur * 60000);
+                        return (reqStart < tE && reqEnd > tS);
+                    });
+                    return !hasConflictWithTentative;
+                });
+                if (targetSid) {
+                    if (!tentDetailsForStaff[targetSid.id]) tentDetailsForStaff[targetSid.id] = [];
+                    tentDetailsForStaff[targetSid.id].push(req);
+                    tentativeMap[targetSid.id] = tentDetailsForStaff[targetSid.id][0]; 
+                }
+            });
+
             const rA = document.getElementById('rankArea'); rA.innerHTML = '';
             const rankedStaff = staffData.filter(s=>s.inRank && s.id > 0).sort((a,b)=>{ 
                 const aOngoing = a.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
                 const bOngoing = b.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
-                if (aOngoing && !bOngoing) return 1; if (!aOngoing && bOngoing) return -1;
+                const aTentActive = tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => nowMs >= new Date(`${t.date}T${t.time}`).getTime());
+                const bTentActive = tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => nowMs >= new Date(`${t.date}T${t.time}`).getTime());
+                const aBusy = aOngoing || aTentActive;
+                const bBusy = bOngoing || bTentActive;
+                if (aBusy && !bBusy) return 1; if (!aBusy && bBusy) return -1;
                 const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                 return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
             }).slice(0, 12); 
-            const count = rankedStaff.length; const itemHeight = count <= 4 ? 110 : Math.max(50, 480 / count);
+
+            const count = rankedStaff.length; const itemHeight = count <= 4 ? 120 : Math.max(65, 520 / count);
             rankedStaff.forEach((s,i)=>{
-                const ongoing = s.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
-                const others = s.bookings.filter(b => b.id !== (ongoing ? ongoing.id : null)).filter(b => b.date === dateS && b.time >= timeS).sort((a,b)=>a.time.localeCompare(b.time));
-                let stH = ''; let ct = 0; 
-                if(ongoing) { const endDate = new Date(new Date(`${ongoing.date}T${ongoing.time}`).getTime() + (ongoing.dur * 60000)); stH += `<span class="busy-text">${String(endDate.getHours()).padStart(2,'0')}:${String(endDate.getMinutes()).padStart(2,'0')} 結束</span>`; ct++; } 
-                others.slice(0, 2-ct).forEach(x => { stH += `<span class="b-text">${x.time}</span>`; ct++; }); 
-                if(ct===0) stH = '<span class="b-text">現場</span>';
-                const div = document.createElement('div'); div.className='rank-item'; div.style.top=(i*itemHeight)+'px'; div.style.height = (itemHeight - 10) + 'px'; div.style.borderColor = ongoing ? 'var(--red)' : 'var(--green)';
+                const allUpcoming = [];
+                s.bookings.forEach(b => {
+                    const sMs = new Date(`${b.date}T${b.time}`).getTime();
+                    const eMs = sMs + (b.dur * 60000);
+                    if (eMs > nowMs) allUpcoming.push({ ...b, type: 'real', sMs, eMs });
+                });
+                if (tentDetailsForStaff[s.id]) {
+                    tentDetailsForStaff[s.id].forEach(t => {
+                        const sMs = new Date(`${t.date}T${t.time}`).getTime();
+                        const eMs = sMs + (t.dur * 60000);
+                        if (eMs > nowMs) allUpcoming.push({ ...t, type: 'tentative', sMs, eMs });
+                    });
+                }
+                allUpcoming.sort((a, b) => a.sMs - b.sMs);
+
+                let displayHtml = '';
+                const nextTwo = allUpcoming.slice(0, 2);
+                
+                if (nextTwo.length === 0) {
+                    displayHtml = '<span class="b-text">現場</span>';
+                } else {
+                    nextTwo.forEach((item, idx) => {
+                        const isBusyNow = nowMs >= item.sMs && nowMs <= item.eMs;
+                        const endObj = new Date(item.eMs);
+                        const endT = `${String(endObj.getHours()).padStart(2,'0')}:${String(endObj.getMinutes()).padStart(2,'0')}`;
+                        
+                        if (isBusyNow) {
+                            displayHtml += `<div class="busy-text">${endT} 結束</div>`;
+                        } else {
+                            const label = item.type === 'tentative' ? '暫定' : '';
+                            displayHtml += `<div class="${item.type === 'tentative' ? 'tentative-text' : 'b-text'}">${item.time} (${item.dur}分) ${label}</div>`;
+                        }
+                    });
+                }
+
+                const div = document.createElement('div'); div.className='rank-item'; div.style.top=(i*itemHeight)+'px'; div.style.height = (itemHeight - 8) + 'px'; 
+                const hasBusy = nextTwo.some(item => nowMs >= item.sMs && nowMs <= item.eMs);
+                const hasTentative = nextTwo.some(item => item.type === 'tentative' && nowMs < item.sMs);
+                div.style.borderColor = hasBusy ? 'var(--red)' : (hasTentative ? 'var(--yellow)' : 'var(--green)');
                 div.onclick=()=>{ selIds=[s.id]; document.getElementById('actTitle').innerText=s.id+'號'; resetModes(); document.getElementById('actModal').style.display='flex'; };
-                div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:38px;margin-right:15px;font-weight:bold;">${s.id}</span><div>${stH}</div></div><b style="font-size:32px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
+                div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:38px;margin-right:15px;font-weight:bold;">${s.id}</span><div style="display:flex; flex-direction:column; gap:2px;">${displayHtml}</div></div><b style="font-size:32px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
                 rA.appendChild(div);
             });
+
             document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${s.id}</div>`).join('');
             document.getElementById('bookStaffSpecial').innerHTML = specialIds.map(id => { const c = specialCounts[id]; return `<div class="staff-btn staff-btn-sm ${c > 0 ? 'active' : ''}" style="position:relative;" onclick="openPerson(${id})">${getSpecialName(id)}${c > 0 ? `<div class="count-badge">${c}</div>` : ''}</div>`; }).join('');
             let selText = []; selIds.forEach(id => selText.push(id + '號')); specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
@@ -394,7 +496,21 @@
         }
 
         function openPerson(id) { tempSpecId = id; document.getElementById('personTitle').innerText = `選擇「${getSpecialName(id)}」人數`; document.getElementById('personModal').style.display = 'flex'; }
-        function setPersonCount(count) { specialCounts[tempSpecId] = count; closeM('personModal'); if(document.getElementById('matchModal').style.display==='flex'){ document.getElementById('m-'+tempSpecId).classList.toggle('selected', specialCounts[tempSpecId]>0); if(document.getElementById('m-'+tempSpecId).querySelector('.count-badge')) document.getElementById('m-'+tempSpecId).querySelector('.count-badge').innerText = count; else if(count>0) document.getElementById('m-'+tempSpecId).innerHTML += `<div class="count-badge">${count}</div>`; } render(); }
+        function setPersonCount(count) { 
+            specialCounts[tempSpecId] = count; 
+            closeM('personModal'); 
+            if(document.getElementById('matchModal').style.display==='flex'){ 
+                const target = document.getElementById('m-'+tempSpecId);
+                if(target) {
+                    target.classList.toggle('selected', specialCounts[tempSpecId]>0); 
+                    const badge = target.querySelector('.count-badge');
+                    if(badge) badge.innerText = count; 
+                    else if(count>0) target.innerHTML += `<div class="count-badge">${count}</div>`; 
+                    if(count === 0 && badge) badge.remove();
+                }
+            } 
+            render(); 
+        }
         function tBookSel(id) { const idx = selIds.indexOf(id); if(idx > -1) selIds.splice(idx, 1); else selIds.push(id); render(); }
 
         function updateSettleAndList() {
@@ -427,73 +543,113 @@
             document.getElementById('logModal').style.display='flex';
         }
 
+        function checkAvailability(startMs, endMs, selStaffIds, newCounts) {
+            const realStaff = staffData.filter(s => s.id > 0 && s.inRank);
+            let availablePool = realStaff.filter(s => {
+                const isBusy = s.bookings.some(b => {
+                    if (editBookId && b.id === editBookId) return false;
+                    const bS = new Date(`${b.date}T${b.time}`).getTime();
+                    const bE = bS + (b.dur * 60000);
+                    return (startMs < bE && endMs > bS);
+                });
+                return !isBusy;
+            });
+
+            let existingMaleReq = 0, existingFemaleReq = 0, existingAnyReq = 0;
+            [-1, -2, 0].forEach(spId => {
+                const spStaff = staffData.find(s => s.id === spId);
+                if (spStaff) {
+                    const overlaps = spStaff.bookings.filter(b => {
+                        if (editBookId && b.id === editBookId) return false;
+                        const bS = new Date(`${b.date}T${b.time}`).getTime();
+                        const bE = bS + (b.dur * 60000);
+                        return (startMs < bE && endMs > bS);
+                    });
+                    if (spId === -1) existingMaleReq += overlaps.length;
+                    if (spId === -2) existingFemaleReq += overlaps.length;
+                    if (spId === 0) existingAnyReq += overlaps.length;
+                }
+            });
+
+            const reqMale = (newCounts['-1'] || 0) + existingMaleReq;
+            const reqFemale = (newCounts['-2'] || 0) + existingFemaleReq;
+            const reqAny = (newCounts['0'] || 0) + existingAnyReq;
+
+            for (let sid of selStaffIds) {
+                const idx = availablePool.findIndex(s => s.id === sid);
+                if (idx === -1) return false; 
+                availablePool.splice(idx, 1); 
+            }
+
+            let availableMales = availablePool.filter(s => maleIds.includes(s.id)).length;
+            let availableFemales = availablePool.filter(s => femaleIds.includes(s.id)).length;
+            if (availableMales < reqMale) return false;
+            if (availableFemales < reqFemale) return false;
+            let remaining = availablePool.length - reqMale - reqFemale;
+            if (remaining < reqAny) return false;
+            return true;
+        }
+
         function addB(fT = null, fD = null, mIds = null){
             const d=document.getElementById('bookDate').value, t=fT || document.getElementById('bookTime').value, du=fD || parseInt(document.getElementById('bookDur').value), nt=document.getElementById('bookNote').value;
             const aS = specialIds.filter(id => specialCounts[id] > 0); let tIds = mIds ? mIds : selIds;
             if(tIds.length===0 && aS.length===0) return alert('請選取號碼或人數'); if(!t) return alert('請填寫時間');
             const start = new Date(`${d}T${t}`).getTime(), end = start + (du * 60000);
-            for(let sid of tIds){
-                const s = staffData.find(x=>x.id===sid);
-                const hasC = s.bookings.some(b => { if(editBookId && b.id === editBookId) return false; const bS = new Date(`${b.date}T${b.time}`).getTime(), bE = bS + (b.dur * 60000); return (start < bE && end > bS); });
-                if(hasC) return alert(`${sid}號 師傅此時段已有預約！`);
+
+            if (!checkAvailability(start, end, tIds, specialCounts)) {
+                return alert('時段衝突！該時段人力不足或指定師傅忙碌/未上班。');
             }
+
             if(editBookId !== null) staffData.forEach(s => { s.bookings = s.bookings.filter(b => b.id !== editBookId); });
             tIds.forEach(sid => { const s = staffData.find(x=>x.id===sid); s.bookings.push({id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt}); });
             aS.forEach(sid => { for(let i=0; i<specialCounts[sid]; i++) staffData.find(x=>x.id===sid).bookings.push({id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt}); });
-            editBookId = null; document.getElementById('cancelBookBtn').style.display='none'; document.getElementById('bookNote').value = ''; selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 };
+            
+            editBookId = null; 
+            document.getElementById('cancelBookBtn').style.display='none'; 
+            document.getElementById('bookNote').value = ''; 
+            selIds = []; 
+            specialCounts = { "0": 0, "-1": 0, "-2": 0 };
             save(); render(); showT(fT ? '匹配預約成功' : '預約成功');
         }
 
         function openMatch(){
             matchSels = []; 
+            specialCounts = { "0": 0, "-1": 0, "-2": 0 };
             document.getElementById('matchStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div id="m-${s.id}" class="match-btn-item" onclick="tMatch(${s.id}, false)">${s.id}</div>`).join('');
-            document.getElementById('matchSpecialGrid').innerHTML = specialIds.map(id => `<div id="m-${id}" class="match-btn-item ${specialCounts[id] > 0 ? 'selected' : ''}" onclick="tMatch(${id}, true)">${getSpecialName(id)}${specialCounts[id] > 0 ? `<div class="count-badge">${specialCounts[id]}</div>` : ''}</div>`).join('');
+            document.getElementById('matchSpecialGrid').innerHTML = specialIds.map(id => `<div id="m-${id}" class="match-btn-item" onclick="tMatch(${id}, true)">${getSpecialName(id)}</div>`).join('');
             const mDur = document.getElementById('matchDur'); mDur.innerHTML = ''; for(let i=15; i<=180; i+=15) mDur.innerHTML+=`<option value="${i}">${i} 分鐘</option>`; mDur.value = 60;
-            
             const sHr = document.getElementById('matchStartHr'), eHr = document.getElementById('matchEndHr');
             sHr.innerHTML = ''; eHr.innerHTML = '';
             for(let i=0; i<24; i++){ let opt=`<option value="${i}">${String(i).padStart(2,'0')}:00</option>`; sHr.innerHTML+=opt; eHr.innerHTML+=opt; }
             sHr.value = getTW().getHours(); eHr.value = 23;
-
             document.getElementById('matchResults').innerHTML = ''; document.getElementById('matchModal').style.display='flex';
         }
         function tMatch(id, isSpec){ if(isSpec) openPerson(id); else { const idx = matchSels.indexOf(id); if(idx>-1) matchSels.splice(idx,1); else matchSels.push(id); document.getElementById('m-'+id).classList.toggle('selected', matchSels.includes(id)); } }
         
         function runMatch(){
-            const aS = specialIds.filter(id => specialCounts[id] > 0); if(matchSels.length===0 && aS.length===0) return alert('請選擇師傅或人數');
-            const dur = parseInt(document.getElementById('matchDur').value); const resArea = document.getElementById('matchResults'); resArea.innerHTML = '計算中...';
+            const aS = specialIds.filter(id => specialCounts[id] > 0); 
+            if(matchSels.length===0 && aS.length===0) return alert('請選擇師傅或人數');
+            const dur = parseInt(document.getElementById('matchDur').value); 
+            const resArea = document.getElementById('matchResults'); resArea.innerHTML = '計算中...';
             const startHr = parseInt(document.getElementById('matchStartHr').value);
             const endHr = parseInt(document.getElementById('matchEndHr').value);
-            const now = getTW(); 
-            let check = new Date(now.getTime());
-            if (check.getHours() < startHr) { check.setHours(startHr, 0, 0, 0); }
-            let found = []; 
-            let safetyLimit = 1440;
-            let firstFound = false;
+            const now = getTW(); let check = new Date(now.getTime());
+            if (check.getHours() < startHr || (check.getHours() === startHr && check.getMinutes() === 0 && check.getTime() < now.getTime())) { 
+                check.setHours(startHr, 0, 0, 0); 
+            } else {
+                const m = check.getMinutes(); const remainder = m % 5;
+                if (remainder !== 0) { check.setMinutes(m + (5 - remainder)); check.setSeconds(0, 0); } else { check.setSeconds(0, 0); }
+            }
+            let found = []; let safetyLimit = 1440;
             while(found.length < 5 && safetyLimit > 0){
-                if (check.getHours() >= endHr || check.getDate() !== now.getDate()) break;
+                if (check.getHours() >= endHr || check.getDate() !== now.getDate()) { if (!(check.getHours() === endHr && check.getMinutes() === 0)) break; }
                 const start = check.getTime(), end = start + (dur * 60000);
-                const endCheck = new Date(end);
-                if (endCheck.getHours() >= endHr && !(endCheck.getHours() === endHr && endCheck.getMinutes() === 0)) {
-                    check.setMinutes(check.getMinutes() + 1);
-                    safetyLimit--;
-                    continue;
-                }
-                const ok = [...matchSels, ...aS].every(sid => {
-                    const s = staffData.find(x => x.id === sid);
-                    return !s.bookings.some(b => {
-                        const bS = new Date(`${b.date}T${b.time}`).getTime(), bE = bS + (b.dur * 60000);
-                        return (start < bE && end > bS);
-                    });
-                });
+                const ok = checkAvailability(start, end, matchSels, specialCounts);
                 if(ok){
                     const timeStr = `${String(check.getHours()).padStart(2,'0')}:${String(check.getMinutes()).padStart(2,'0')}`;
                     if (!found.includes(timeStr)) found.push(timeStr);
-                    firstFound = true;
                 }
-                if (!firstFound) { check.setMinutes(check.getMinutes() + 1); } 
-                else { check.setMinutes(check.getMinutes() + 15); }
-                safetyLimit--;
+                check.setMinutes(check.getMinutes() + 5); safetyLimit--;
             }
             resArea.innerHTML = found.length ? found.map(t=>`<div class="result-item"><b>${t} (${dur}分)</b><button onclick="addB('${t}',${dur}, [${matchSels.join(',')}]);closeM('matchModal')" style="background:var(--green);border:none;color:#fff;padding:8px 15px;border-radius:8px;cursor:pointer;">選用</button></div>`).join('') : '此區間無空檔';
         }
@@ -504,7 +660,12 @@
             document.getElementById('cancelBookBtn').style.display = 'block'; showPage('page-book');
         }
         function cancelEditB(){ editBookId = null; document.getElementById('cancelBookBtn').style.display = 'none'; document.getElementById('bookNote').value = ''; showPage('page-list'); }
-        function showPage(p){ document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active', x.id===p)); render(); }
+        
+        function showPage(p){ 
+            if(p !== 'page-book') { selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; }
+            document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active', x.id===p)); 
+            render(); 
+        }
         function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
         function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
         function resetModes() { 
