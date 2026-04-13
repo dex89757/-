@@ -125,11 +125,12 @@
     </div></div>
 
     <div id="amtModal" class="modal"><div class="modal-content">
-        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:20px;">
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:20px;">
             <button id="m_des" class="tag-btn" onclick="toggleM('des')">指名</button>
             <button id="m_extra" class="tag-btn" onclick="toggleM('extra')">外</button>
             <button id="m_sign" class="tag-btn" onclick="toggleM('sign')">簽名</button>
             <button id="m_coupon" class="tag-btn" onclick="toggleM('coupon')">卷</button>
+            <button id="m_private" class="tag-btn" style="color:var(--purple);" onclick="toggleM('private')">企進</button>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
             <button id="m_oilS" class="tag-btn" onclick="toggleOil('oilS')">油（師）</button>
@@ -143,7 +144,7 @@
         <button class="btn-action" style="background:none; color:#888; margin-top:15px;" onclick="closeM('amtModal')">不做變更並關閉</button>
     </div></div>
 
-    <div id="historyEditModal" class="modal"><div class="modal-content"><h3>修正明細</h3><div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:15px;"><button id="he_isD" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isD')">指名</button><button id="he_isExtra" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isExtra')">外</button><button id="he_isP" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isP')">簽名</button><button id="he_isC" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isC')">卷</button></div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;"><button id="he_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilS')">油（師）</button><button id="he_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilB')">油（店）</button></div><input type="number" id="he_amt" class="input-dark" placeholder="修改金額"><button class="btn-action" style="background:var(--blue)" onclick="saveHistoryEdit()">確認修改</button><button class="btn-action" style="background:none; color:#888;" onclick="closeM('historyEditModal')">取消</button></div></div>
+    <div id="historyEditModal" class="modal"><div class="modal-content"><h3>修正明細</h3><div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:15px;"><button id="he_isD" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isD')">指名</button><button id="he_isExtra" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isExtra')">外</button><button id="he_isP" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isP')">簽名</button><button id="he_isC" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isC')">卷</button><button id="he_isPri" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleHE('isPri')">企進</button></div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;"><button id="he_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilS')">油（師）</button><button id="he_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilB')">油（店）</button></div><input type="number" id="he_amt" class="input-dark" placeholder="修改金額"><button class="btn-action" style="background:var(--blue)" onclick="saveHistoryEdit()">確認修改</button><button class="btn-action" style="background:none; color:#888;" onclick="closeM('historyEditModal')">取消</button></div></div>
     <div id="actModal" class="modal"><div class="modal-content"><h2 id="actTitle" style="text-align:center; font-size:36px;"></h2><button class="btn-action" style="background:var(--blue); padding:25px 0;" onclick="handleAct('amt')">💰 金額記帳</button><button class="btn-action" style="background:var(--green); padding:25px 0;" onclick="handleAct('book')">⏰ 預約排程</button><button class="btn-action" style="background:none; border:1px solid #444;" onclick="closeM('actModal')">返回</button></div></div>
     <div id="logModal" class="modal"><div class="modal-content"><h3 id="logTitle"></h3><div id="logList"></div><button class="btn-action" style="background:#333;margin-top:20px;" onclick="closeM('logModal')">關閉</button></div></div>
     <div id="reportModal" class="modal"><div class="modal-content">
@@ -171,7 +172,7 @@
         const femaleIds = [2, 38, 100, 101];
 
         let selIds=[], isBoss=false, editBookId=null, matchSels=[]; 
-        let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false};
+        let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
         let specialCounts = { "0": 0, "-1": 0, "-2": 0 };
         let tempSpecId = null; 
         let activeHE = { d: null, r: null, l: null, isLive: false };
@@ -252,17 +253,21 @@
             monthLogs.forEach(day => {
                 day.records.forEach(r => {
                     if (!summary[r.id]) summary[r.id] = { total: 0, des: 0 };
-                    summary[r.id].total += r.totalAmt; 
-                    summary[r.id].des += r.desAmt;
-                    if (r.fullLogs) {
-                        r.fullLogs.forEach(l => {
-                            totalPersons += 1;
-                            if (l.isD) totalDes += 1;
-                            if (l.isP) totalSign += 1;
-                            else if (l.isC) totalCoupon += 1;
-                            else totalCash += 1;
-                        });
-                    }
+                    // 業績報表應排除企進，以免報表虛高
+                    const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
+                    const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
+                    const filteredDes = filteredLogs.filter(l => l.isD).reduce((sum, l) => sum + l.amt, 0);
+                    
+                    summary[r.id].total += filteredTotal; 
+                    summary[r.id].des += filteredDes;
+
+                    filteredLogs.forEach(l => {
+                        totalPersons += 1;
+                        if (l.isD) totalDes += 1;
+                        if (l.isP) totalSign += 1;
+                        else if (l.isC) totalCoupon += 1;
+                        else totalCash += 1;
+                    });
                 });
             });
             const sortedIds = Object.keys(summary).sort((a, b) => Number(a) - Number(b));
@@ -301,26 +306,35 @@
                 const dayIndex = day.originalIndex;
                 let dayPersons = 0, dayTotalAmt = 0, dayDes = 0, daySign = 0, dayCoupon = 0;
                 let tableRows = day.records.map((r, rIdx) => {
+                    const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
+                    const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
+                    const filteredDes = filteredLogs.filter(l => l.isD).reduce((sum, l) => sum + l.amt, 0);
+                    
                     const name = r.id > 0 ? r.id + ' 號' : getSpecialName(r.id);
-                    const desRate = r.totalAmt > 0 ? Math.round((r.desAmt / r.totalAmt) * 100) : 0;
-                    const units = r.totalAmt > 0 ? (r.totalAmt / 700).toFixed(1) : 0;
+                    const desRate = filteredTotal > 0 ? Math.round((filteredDes / filteredTotal) * 100) : 0;
+                    const units = filteredTotal > 0 ? (filteredTotal / 700).toFixed(1) : 0;
                     const uid = `h-${dayIndex}-${rIdx}`;
-                    dayTotalAmt += r.totalAmt;
+                    dayTotalAmt += filteredTotal;
                     
                     let detailHtml = r.fullLogs ? r.fullLogs.map((l, lIdx) => {
-                        dayPersons += 1;
-                        if(l.isD) dayDes += 1;
-                        if(l.isP) daySign += 1;
-                        else if(l.isC) dayCoupon += 1;
+                        if(!l.isPri) {
+                            dayPersons += 1;
+                            if(l.isD) dayDes += 1;
+                            if(l.isP) daySign += 1;
+                            else if(l.isC) dayCoupon += 1;
+                        }
 
-                        let tags = []; if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
-                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:var(--green); font-size:18px;">$${l.amt}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button></div>`;
+                        let tags = []; 
+                        if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
+                        if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
+                        if(l.isPri) tags.push('[企]');
+                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button></div>`;
                     }).join('') : '';
 
                     return `
                         <tr onclick="toggleH('${uid}')" style="cursor:pointer;">
                             <td><b>${name}</b></td>
-                            <td style="color:var(--green);">$${r.totalAmt}</td>
+                            <td style="color:var(--green);">$${filteredTotal}</td>
                             <td>${desRate}%</td>
                             <td style="color:var(--orange);">${units}</td>
                         </tr>
@@ -356,14 +370,22 @@
             if (isLive) tempHE = JSON.parse(JSON.stringify(staffData.find(s=>s.id===d).logs[l]));
             else tempHE = JSON.parse(JSON.stringify(historyData[d].records[r].fullLogs[l]));
             document.getElementById('he_amt').value = tempHE.amt;
-            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB'].forEach(k => { const target = k === 'isD' ? 'he_isD' : 'he_'+k; const btn = document.getElementById(target); if(btn) btn.classList.toggle('tag-active', !!tempHE[k]); });
+            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri'].forEach(k => { 
+                const target = k === 'isD' ? 'he_isD' : (k === 'isPri' ? 'he_isPri' : 'he_'+k); 
+                const btn = document.getElementById(target); 
+                if(btn) btn.classList.toggle('tag-active', !!tempHE[k]); 
+            });
             document.getElementById('historyEditModal').style.display = 'flex';
         }
         function toggleHE(k) {
             if(k==='oilS'){ tempHE.oilS=!tempHE.oilS; if(tempHE.oilS) tempHE.oilB=false; }
             else if(k==='oilB'){ tempHE.oilB=!tempHE.oilB; if(tempHE.oilB) tempHE.oilS=false; }
             else { tempHE[k]=!tempHE[k]; }
-            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB'].forEach(key => { const target = key === 'isD' ? 'he_isD' : 'he_'+key; const btn = document.getElementById(target); if(btn) btn.classList.toggle('tag-active', !!tempHE[key]); });
+            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri'].forEach(key => { 
+                const target = key === 'isD' ? 'he_isD' : (key === 'isPri' ? 'he_isPri' : 'he_'+key);
+                const btn = document.getElementById(target); 
+                if(btn) btn.classList.toggle('tag-active', !!tempHE[key]); 
+            });
         }
         function saveHistoryEdit() {
             tempHE.amt = parseInt(document.getElementById('he_amt').value) || 0;
@@ -394,6 +416,7 @@
             spReqs.sort((a,b) => a.time.localeCompare(b.time));
 
             const sortedRankCandidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
+                // 排班順序維持原樣：包含企進金額
                 const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                 return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
             });
@@ -437,6 +460,7 @@
                 const aBusy = aOngoing || aTentActive;
                 const bBusy = bOngoing || bTentActive;
                 if (aBusy && !bBusy) return 1; if (!aBusy && bBusy) return -1;
+                // 排班判斷：全業績
                 const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                 return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
             }).slice(0, 12); 
@@ -518,6 +542,9 @@
             document.getElementById('settleBody').innerHTML = staffData.filter(s=>s.logs.length>0).map(s=>{
                 let sSum=0, bSum=0, tAmt=0;
                 s.logs.forEach(l=>{
+                    // 如果標記為企進，不列入結帳計算
+                    if(l.isPri) return;
+
                     tAmt += l.amt; let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0;
                     let sP = Math.round(l.amt * 0.7), bP = l.amt - sP;
                     if(l.oilS) sSum += (sP + oil); else sSum += sP;
@@ -537,8 +564,11 @@
             selIds=[id]; const s=staffData.find(x=>x.id===id); 
             document.getElementById('logTitle').innerText = (id > 0 ? id+'號' : getSpecialName(id))+'今日明細';
             document.getElementById('logList').innerHTML = s.logs.map((l,i)=>{
-                let tags = []; if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
-                return `<div style="padding:15px 10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;flex-direction:column;"><span style="font-size:24px;font-weight:bold;color:var(--green);">$${l.amt}</span><span style="font-size:16px;color:var(--orange);">${tags.join(' ')}</span></div><div><button onclick="openHE(${id},0,${i},true)" class="btn-edit" style="margin-right:5px;">改</button><button onclick="delL(${id},${i})" class="btn-del">刪</button></div></div>`;
+                let tags = []; 
+                if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
+                if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
+                if(l.isPri) tags.push('[企]');
+                return `<div style="padding:15px 10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;flex-direction:column;"><span style="font-size:24px;font-weight:bold;color:${l.isPri?'var(--purple)':'var(--green)'};">$${l.amt}</span><span style="font-size:16px;color:var(--orange);">${tags.join(' ')}</span></div><div><button onclick="openHE(${id},0,${i},true)" class="btn-edit" style="margin-right:5px;">改</button><button onclick="delL(${id},${i})" class="btn-del">刪</button></div></div>`;
             }).join('');
             document.getElementById('logModal').style.display='flex';
         }
@@ -669,15 +699,15 @@
         function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
         function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
         function resetModes() { 
-            mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false}; 
-            ['des','extra','sign','coupon','oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor='transparent'); 
+            mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; 
+            ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('m_'+k).style.borderColor='transparent'); 
             document.getElementById('customAmt').value = ''; 
         }
         function hAmt(a){ 
             const amt = parseInt(a);
             if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
             const s = staffData.find(x=>x.id===selIds[0]); 
-            s.logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB}); 
+            s.logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private}); 
             closeM('amtModal'); save(); render(); 
         }
         function tRank(id){ let s=staffData.find(x=>x.id===id); s.inRank=!s.inRank; s.joinTime=Date.now(); save(); render(); }
