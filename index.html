@@ -9,836 +9,313 @@
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; user-select: none; font-size: 20px; font-weight: 300; }
         #toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--green); padding: 15px 40px; border-radius: 50px; z-index: 9999; transition: 0.4s; font-size: 24px; }
         #toast.active { top: 30px; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 80px; background: #111; display: flex; border-top: 1px solid #333; z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; color: #888; font-size: 18px; cursor: pointer; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 80px; background: #111; display: flex; border-top: 1px solid #333; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 14px; color: #888; }
         .nav-item.active { color: var(--blue); }
-        .page { display: none; padding: 20px 20px 120px; }
-        .page.active { display: block; }
-        .rank-item { position: absolute; width: 100%; background: var(--card); padding: 15px 20px; border-radius: 25px; border-left: 10px solid #444; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; transition: 0.4s; min-height: 45px; cursor: pointer; }
-        .staff-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .staff-btn { background: #2c2c2e; padding: 15px 0; border-radius: 12px; border: 1px solid #444; text-align: center; color: #fff; font-size: 24px; cursor: pointer; }
-        .staff-btn-sm { padding: 10px 0; font-size: 18px; border-radius: 10px; }
-        .staff-btn.active { background: var(--blue); border-color: #fff; }
-        .btn-action { padding: 20px 0; border-radius: 15px; border: none; color: #fff; width: 100%; font-size: 22px; margin-bottom: 10px; cursor: pointer; }
-        .input-dark { background:#222; color:#fff; border:1px solid #444; padding:15px 8px; border-radius:10px; width: 100%; box-sizing: border-box; margin-bottom: 12px; font-size: 22px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
-        #personModal, #historyEditModal { z-index: 4000; }
-        #matchModal { z-index: 3000; }
-        .modal-content { background: #1c1c1e; width: 95%; max-width: 600px; padding: 20px; border-radius: 25px; max-height: 90vh; overflow-y: auto; }
-        .b-text { color: var(--orange); font-size: 18px; display: block; line-height: 1.2; }
-        .busy-text { color: var(--red); font-size: 20px; display: block; font-weight: bold; line-height: 1.2; }
-        .tentative-text { color: var(--yellow); font-size: 18px; display: block; font-weight: normal; line-height: 1.2; }
-        .tag-btn { background:#333; padding:15px 0; color:#eee; border-radius:10px; border:1.5px solid transparent; font-size: 24px; font-weight: bold; cursor: pointer; }
-        .btn-edit { color: var(--blue); border: 1px solid var(--blue); padding: 8px 15px; border-radius: 8px; font-size: 18px; background: none; cursor: pointer; }
-        .btn-del { color: var(--red); border: 1px solid var(--red); padding: 8px 15px; border-radius: 8px; font-size: 18px; background: none; cursor: pointer; }
-        .match-btn-item { background: #3a3a3c; padding: 12px 0; border-radius: 10px; text-align: center; font-size: 20px; border: 2px solid transparent; position: relative; cursor: pointer; }
-        .match-btn-item.selected { border-color: var(--blue); background: #444; color: var(--blue); font-weight: bold; }
-        .result-item { background: #2c2c2e; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--purple); }
-        .count-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 14px; display: flex; align-items: center; justify-content: center; z-index: 5; font-weight: bold; }
-        .report-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 18px; }
-        .report-table th { background: #333; color: #888; padding: 12px 5px; text-align: left; }
-        .report-table td { padding: 15px 5px; border-bottom: 1px solid #333; }
-        .history-card { background: #2c2c2e; padding: 15px; border-radius: 15px; margin-bottom: 12px; border-left: 5px solid var(--blue); }
-        .history-detail-panel { display: none; margin-top: 5px; background: #000; border-radius: 8px; padding: 10px; }
-        .tag-active { border-color: #fff !important; background: var(--blue) !important; }
-        .summary-box { background: #2c2c2e; border: 1.5px solid #444; border-radius: 15px; padding: 15px; margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .summary-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3d3d3f; padding: 5px 0; }
-        .summary-label { color: #aaa; font-size: 16px; }
-        .summary-val { color: #fff; font-size: 18px; font-weight: bold; }
-        .report-select-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        .report-select { flex: 1; background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 10px; font-size: 18px; }
-        .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-        .tag-grid-small { grid-template-columns: 1fr 1fr; }
+        .nav-item i { font-size: 28px; margin-bottom: 4px; }
+        .container { padding: 20px; padding-bottom: 120px; display: none; }
+        .container.active { display: block; }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; }
+        .staff-btn { background: #333; border-radius: 15px; padding: 20px 10px; text-align: center; position: relative; border: 2px solid transparent; }
+        .staff-btn.in-rank { border-color: var(--blue); background: rgba(0,122,255,0.1); }
+        .staff-btn.has-book { border-color: var(--orange); }
+        .staff-name { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .staff-id { font-size: 14px; color: #888; }
+        .badge { position: absolute; top: -8px; right: -8px; background: var(--red); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card); width: 90%; max-width: 400px; border-radius: 30px; padding: 30px; }
+        .btn-action { width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 20px; font-weight: bold; margin-bottom: 12px; color: #fff; }
+        select, input { width: 100%; padding: 15px; border-radius: 10px; background: #333; border: 1px solid #444; color: #fff; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; }
+        .log-item { background: #2c2c2e; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        .row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .flex-1 { flex: 1; }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body onclick="handleGlobalClick(event)">
+
     <div id="toast">成功</div>
 
-    <div id="page-rank" class="page active">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <div>
-                <input type="date" id="todayDate" style="background:none; border:none; color:#888; font-size:20px; font-family:sans-serif; outline:none; padding:0;" onchange="render()">
-                <h3 style="margin:0;">排班看板</h3>
-            </div>
-            <h3 id="clock" style="color:var(--green); margin:0; font-size: 28px;">00:00</h3>
-        </div>
-        <div id="rankArea" style="position:relative; min-height:500px;"></div>
-    </div>
-
-    <div id="page-staff" class="page">
-        <h3>👤 師傅排班</h3><div id="staffGridOn" class="staff-grid"></div>
-        <button class="btn-action" style="background:#444;" onclick="clearRank()">🧹 清空看板</button>
-    </div>
-
-    <div id="page-book" class="page">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3>⏰ 預約登記</h3>
-            <button onclick="openMatch()" style="background:var(--purple); color:#fff; border:none; padding:8px 15px; border-radius:10px; font-size:16px; cursor:pointer;">🔍 匹配時間</button>
-        </div>
-        <div id="bookStaffGrid" class="staff-grid"></div>
-        <div id="bookStaffSpecial" class="staff-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: -10px;"></div>
-        <div style="background:var(--card); padding:20px; border-radius:20px;">
-            <div id="targetBookLabel" style="color:var(--green); margin-bottom:10px; font-weight:bold;">選取的項目：<span id="selNumDisp">請選擇</span></div>
-            <input type="date" id="bookDate" class="input-dark">
-            <div style="display:flex; gap:8px;"><input type="time" id="bookTime" class="input-dark" style="flex:1.5;"><select id="bookDur" class="input-dark" style="flex:1"></select></div>
-            
-            <div class="tag-grid">
-                <button id="bk_des" class="tag-btn" style="font-size:18px;" onclick="toggleBk('des')">指名</button>
-                <button id="bk_extra" class="tag-btn" style="font-size:18px;" onclick="toggleBk('extra')">外</button>
-                <button id="bk_sign" class="tag-btn" style="font-size:18px;" onclick="toggleBk('sign')">簽名</button>
-                <button id="bk_coupon" class="tag-btn" style="font-size:18px;" onclick="toggleBk('coupon')">卷</button>
-                <button id="bk_private" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleBk('private')">企進</button>
-            </div>
-            <div class="tag-grid tag-grid-small">
-                <button id="bk_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOilBk('oilS')">油（師）</button>
-                <button id="bk_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleOilBk('oilB')">油（店）</button>
-            </div>
-            <input type="number" id="bookAmt" class="input-dark" placeholder="輸入預計金額 (例如: 700)">
-            <input type="text" id="bookNote" class="input-dark" placeholder="備註 (例如: 指名客)">
-            <button class="btn-action" style="background:var(--blue)" onclick="addB()">確認登記預約</button>
-            <button id="cancelBookBtn" class="btn-action" style="background:none; color:#888; display:none;" onclick="cancelEditB()">不做變更並關閉</button>
-        </div>
-    </div>
-
-    <div id="page-list" class="page"><h3>📅 行程表</h3><div id="fullBookList"></div></div>
-
-    <div id="page-settle" class="page">
+    <div id="page-rank" class="container active">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 id="settleTitle" style="margin:0; font-size: 28px;">師傅結帳</h3>
-            <button onclick="toggleMode()" id="modeBtn" style="background:var(--purple); padding:12px 20px; border-radius:12px; color:#fff; border:none; font-size: 18px; font-weight: bold; cursor:pointer;">切換店內</button>
+            <h1 style="margin:0">排班看板</h1>
+            <div>
+                <button onclick="toggleMode()" style="background:none; border:1px solid #555; color:#888; padding:8px 15px; border-radius:10px;">切換視角</button>
+                <button onclick="clearRank()" style="background:var(--red); border:none; color:#fff; padding:8px 15px; border-radius:10px; margin-left:10px;">清空</button>
+            </div>
         </div>
-        <div id="settleBody"></div>
-        <div id="settleGrandTotal"></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-            <button class="btn-action" style="background:var(--blue); margin-bottom: 0;" onclick="saveToHistory()">💾 儲存今日帳目</button>
-            <button class="btn-action" style="background:var(--orange); margin-bottom: 0;" onclick="openReport()">📊 總業績報表</button>
+        <div id="rank-grid" class="grid"></div>
+    </div>
+
+    <div id="page-staff" class="container">
+        <h1>技師名單</h1>
+        <div id="staff-grid" class="grid"></div>
+    </div>
+
+    <div id="page-history" class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h1>歷史帳目</h1>
+            <button onclick="clearAllLogs()" style="background:var(--red); border:none; color:#fff; padding:8px 15px; border-radius:10px;">清空全部紀錄</button>
         </div>
-        <div style="margin-top: 40px;"><button onclick="clearAllLogs()" style="background:none; border: 1px solid #444; padding:12px 20px; border-radius:12px; color:#888; font-size: 16px; cursor:pointer;">🧹 清空所有帳目</button></div>
+        <div id="history-list"></div>
+    </div>
+
+    <div id="page-book" class="container">
+        <button onclick="showPage('page-rank')" style="background:none; border:none; color:var(--blue); font-size:18px; margin-bottom:20px;"><i class="fas fa-chevron-left"></i> 返回</button>
+        <div class="card">
+            <h2>新增預約/點台</h2>
+            <label>選擇師傅</label>
+            <select id="bookStaff"></select>
+            <label>項目內容</label>
+            <input type="text" id="bookNote" placeholder="例如：指壓、油壓...">
+            <div class="row">
+                <div class="flex-1">
+                    <label>預約時間</label>
+                    <input type="time" id="bookTime">
+                </div>
+                <div class="flex-1">
+                    <label>所需分鐘</label>
+                    <select id="bookDur"></select>
+                </div>
+            </div>
+            <button class="btn-action" style="background:var(--orange)" onclick="addB()">確認預約</button>
+        </div>
+    </div>
+
+    <div id="actModal" class="modal" onclick="closeM('actModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 id="actTitle" style="margin-top:0"></h2>
+            <button class="btn-action" style="background:var(--green)" onclick="handleAct('amt')">結帳儲存</button>
+            <button class="btn-action" style="background:var(--orange)" onclick="handleAct('book')">預約/點台</button>
+            <button class="btn-action" style="background:var(--blue)" onclick="handleAct('log')">查看紀錄</button>
+            <button class="btn-action" style="background:#444" onclick="closeM('actModal')">取消</button>
+        </div>
+    </div>
+
+    <div id="amtModal" class="modal" onclick="closeM('amtModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2>結帳金額</h2>
+            <div id="priceBtnGroup" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;"></div>
+            <input type="number" id="customAmt" placeholder="輸入其他金額">
+            <button class="btn-action" style="background:var(--green)" onclick="hAmt()">確認儲存</button>
+            <button class="btn-action" style="background:#444" onclick="closeM('amtModal')">返回</button>
+        </div>
+    </div>
+
+    <div id="logModal" class="modal" onclick="closeM('logModal')">
+        <div class="modal-content" style="max-width:500px" onclick="event.stopPropagation()">
+            <h2 id="logTitle">個人紀錄</h2>
+            <div id="logList" style="max-height:400px; overflow-y:auto; margin-bottom:20px;"></div>
+            <button class="btn-action" style="background:#444" onclick="closeM('logModal')">關閉</button>
+        </div>
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active" id="nav-rank" onclick="showPage('page-rank')">📋 看板</div>
-        <div class="nav-item" id="nav-staff" onclick="showPage('page-staff')">👤 師傅</div>
-        <div class="nav-item" id="nav-book" onclick="showPage('page-book')">⏰ 預約</div>
-        <div class="nav-item" id="nav-list" onclick="showPage('page-list')">📅 行程</div>
-        <div class="nav-item" id="nav-settle" onclick="showPage('page-settle')">🧾 結帳</div>
+        <div class="nav-item active" onclick="showPage('page-rank')"><i class="fas fa-list-ol"></i><span>看板</span></div>
+        <div class="nav-item" onclick="showPage('page-staff')"><i class="fas fa-users"></i><span>技師</span></div>
+        <div class="nav-item" onclick="showPage('page-history')"><i class="fas fa-history"></i><span>帳目</span></div>
     </div>
 
-    <div id="personModal" class="modal"><div class="modal-content"><h3 id="personTitle" style="text-align:center;">選擇人數</h3><div class="staff-grid" style="grid-template-columns: repeat(2, 1fr);"><button class="btn-action" style="background:#333" onclick="setPersonCount(1)">1 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(2)">2 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(3)">3 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(4)">4 位</button></div><button class="btn-action" style="background:var(--red); margin-top:10px;" onclick="setPersonCount(0)">取消選擇</button></div></div>
-    
-    <div id="matchModal" class="modal"><div class="modal-content">
-        <h3 style="margin-top:0;">🔍 多人匹配找空檔</h3>
-        <div id="matchStaffGrid" class="staff-grid"></div>
-        <div id="matchSpecialGrid" class="staff-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: -10px;"></div>
-        <div style="display:flex; gap:10px; margin-bottom:12px;">
-            <div style="flex:1;"><label style="font-size:14px; color:#888;">匹配長度</label><select id="matchDur" class="input-dark" style="margin-bottom:0;"></select></div>
-        </div>
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <div style="flex:1;"><label style="font-size:14px; color:#888;">起始小時</label><select id="matchStartHr" class="input-dark" style="margin-bottom:0;"></select></div>
-            <div style="flex:1;"><label style="font-size:14px; color:#888;">結束小時</label><select id="matchEndHr" class="input-dark" style="margin-bottom:0;"></select></div>
-        </div>
-        
-        <div class="tag-grid">
-            <button id="ma_des" class="tag-btn" style="font-size:18px;" onclick="toggleMa('des')">指名</button>
-            <button id="ma_extra" class="tag-btn" style="font-size:18px;" onclick="toggleMa('extra')">外</button>
-            <button id="ma_sign" class="tag-btn" style="font-size:18px;" onclick="toggleMa('sign')">簽名</button>
-            <button id="ma_coupon" class="tag-btn" style="font-size:18px;" onclick="toggleMa('coupon')">卷</button>
-            <button id="ma_private" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleMa('private')">企進</button>
-        </div>
-        <div class="tag-grid tag-grid-small">
-            <button id="ma_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOilMa('oilS')">油（師）</button>
-            <button id="ma_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleOilMa('oilB')">油（店）</button>
-        </div>
-        <input type="number" id="matchAmt" class="input-dark" placeholder="輸入預設金額 (例: 700)" style="margin-bottom:15px;">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-        <button class="btn-action" style="background:var(--blue)" onclick="runMatch()">開始計算空檔</button>
-        <div id="matchResults" style="margin-top:10px;"></div>
-        <button class="btn-action" style="background:none; color:#888;" onclick="closeM('matchModal')">關閉</button>
-    </div></div>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA6brkw62LOPXdG6VVANPXA2ZRaM9nt66g",
+            authDomain: "auto-accounting-55f62.firebaseapp.com",
+            databaseURL: "https://auto-accounting-55f62-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "auto-accounting-55f62",
+            storageBucket: "auto-accounting-55f62.firebasestorage.app",
+            messagingSenderId: "409481971569",
+            appId: "1:409481971569:web:e89046546627eef5d7d8d0"
+        };
 
-    <div id="amtModal" class="modal"><div class="modal-content">
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:20px;">
-            <button id="m_des" class="tag-btn" onclick="toggleM('des')">指名</button>
-            <button id="m_extra" class="tag-btn" onclick="toggleM('extra')">外</button>
-            <button id="m_sign" class="tag-btn" onclick="toggleM('sign')">簽名</button>
-            <button id="m_coupon" class="tag-btn" onclick="toggleM('coupon')">卷</button>
-            <button id="m_private" class="tag-btn" style="color:var(--purple);" onclick="toggleM('private')">企進</button>
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-            <button id="m_oilS" class="tag-btn" onclick="toggleOil('oilS')">油（師）</button>
-            <button id="m_oilB" class="tag-btn" onclick="toggleOil('oilB')">油（店）</button>
-        </div>
-        <div style="border-top: 1px solid #444; padding-top: 15px; margin-bottom: 20px;">
-            <input type="number" id="customAmt" class="input-dark" placeholder="輸入自定義金額" style="margin-bottom:10px;">
-            <button class="btn-action" style="background:var(--blue); margin-bottom:0;" onclick="hAmt(document.getElementById('customAmt').value)">確認輸入金額</button>
-        </div>
-        <div class="staff-grid" id="priceBtnGroup"></div>
-        <button class="btn-action" style="background:none; color:#888; margin-top:15px;" onclick="closeM('amtModal')">不做變更並關閉</button>
-    </div></div>
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    <div id="historyEditModal" class="modal"><div class="modal-content"><h3>修正明細</h3><div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:15px;"><button id="he_isD" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isD')">指名</button><button id="he_isExtra" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isExtra')">外</button><button id="he_isP" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isP')">簽名</button><button id="he_isC" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isC')">卷</button><button id="he_isPri" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleHE('isPri')">企進</button></div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;"><button id="he_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilS')">油（師）</button><button id="he_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilB')">油（店）</button></div><input type="number" id="he_amt" class="input-dark" placeholder="修改金額"><button class="btn-action" style="background:var(--blue)" onclick="saveHistoryEdit()">確認修改</button><button class="btn-action" style="background:none; color:#888;" onclick="closeM('historyEditModal')">取消</button></div></div>
-    <div id="actModal" class="modal"><div class="modal-content"><h2 id="actTitle" style="text-align:center; font-size:36px;"></h2><button class="btn-action" style="background:var(--blue); padding:25px 0;" onclick="handleAct('amt')">💰 金額記帳</button><button class="btn-action" style="background:var(--green); padding:25px 0;" onclick="handleAct('book')">⏰ 預約排程</button><button class="btn-action" style="background:none; border:1px solid #444;" onclick="closeM('actModal')">返回</button></div></div>
-    <div id="logModal" class="modal"><div class="modal-content"><h3 id="logTitle"></h3><div id="logList"></div><button class="btn-action" style="background:#333;margin-top:20px;" onclick="closeM('logModal')">關閉</button></div></div>
-    <div id="reportModal" class="modal"><div class="modal-content">
-        <div id="reportHeader">
-            <h3 style="margin:0 0 10px 0; color:var(--orange);">📊 總業績報表</h3>
-            <div class="report-select-group">
-                <select id="reportYear" class="report-select" onchange="openReport()"></select>
-                <select id="reportMonth" class="report-select" onchange="openReport()"></select>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <button id="btnHistoryView" style="background:var(--purple); border:none; color:#fff; padding:10px 15px; border-radius:10px; cursor:pointer;" onclick="renderHistoryList()">查看當月每日明細</button>
-                <button id="btnReportBack" style="display:none; background:var(--blue); border:none; color:#fff; padding:10px 15px; border-radius:10px; cursor:pointer;" onclick="openReport()">返回月總覽</button>
-            </div>
-        </div>
-        <div id="reportArea"></div>
-        <button class="btn-action" style="background:#333; margin-top:20px;" onclick="closeM('reportModal')">關閉報表</button>
-    </div></div>
-
-    <script>
+        // 資料狀態
         const staffIds = [0, 1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101];
-        const specialIds = [0, -1, -2]; 
-        const getSpecialName = (id) => id === 0 ? '不指定' : (id === -1 ? '指男' : '指女');
-        const maleIds = [1, 5, 7, 9, 10, 11, 12, 13];
-        const femaleIds = [2, 38, 100, 101];
+        let staffData = [];
+        let historyData = [];
+        let curSid = null;
+        let isBoss = false;
 
-        let selIds=[], isBoss=false, editBookId=null, matchSels=[]; 
-        let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
-        let bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
-        let matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
-
-        let specialCounts = { "0": 0, "-1": 0, "-2": 0 };
-        let tempSpecId = null; 
-        let activeHE = { d: null, r: null, l: null, isLive: false };
-        let tempHE = {};
-
-        let staffData = JSON.parse(localStorage.getItem('massageData')) || [];
-        let historyData = JSON.parse(localStorage.getItem('massageHistory')) || [];
-
-        const allPossibleIds = [...staffIds, -1, -2];
-        staffData = allPossibleIds.map(id => staffData.find(s=>s.id===id) || {id, inRank:false, joinTime:0, bookings:[], logs:[]});
-
-        const getTW = () => {
-            const now = new Date();
-            const formatter = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-            const parts = formatter.formatToParts(now);
-            const map = {}; parts.forEach(p => map[p.type] = p.value);
-            return new Date(`${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}:${map.second}`);
-        };
-
-        const save = () => { localStorage.setItem('massageData', JSON.stringify(staffData)); localStorage.setItem('massageHistory', JSON.stringify(historyData)); };
-        
-        function handleGlobalClick(e) {
-            if (e.target.classList.contains('modal')) {
-                const modalId = e.target.id;
-                if (modalId === 'personModal') setPersonCount(0);
-                else if (modalId === 'historyEditModal') closeM('historyEditModal');
-                else if (modalId === 'amtModal') closeM('amtModal');
-                else closeM(modalId);
+        // 初始化資料庫監聽
+        onValue(ref(db, 'massageApp'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                staffData = data.staffData || [];
+                historyData = data.historyData || [];
             }
-        }
-
-        const closeM = (m) => { 
-            if(m === 'matchModal') { matchSels = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; }
-            const el = document.getElementById(m);
-            if(el) el.style.display='none'; 
+            // 補齊 ID
+            [...staffIds, -1, -2].forEach(id => {
+                if(!staffData.find(s=>s.id===id)) staffData.push({id, inRank:false, joinTime:0, bookings:[], logs:[]});
+            });
             render();
+        });
+
+        // 雲端儲存
+        const save = () => {
+            set(ref(db, 'massageApp'), {
+                staffData: staffData,
+                historyData: historyData,
+                lastUpdated: Date.now()
+            });
         };
-        const showT = (m) => { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('active'); setTimeout(()=>t.classList.remove('active'),2000); };
 
-        function initReportFilters() {
-            const ySel = document.getElementById('reportYear'), mSel = document.getElementById('reportMonth');
-            if (ySel.options.length > 0) return; 
-            const now = getTW();
-            for (let i = 2024; i <= 2030; i++) { const opt = new Option(i + ' 年', i); ySel.add(opt); }
-            for (let i = 1; i <= 12; i++) { const opt = new Option(i + ' 月', String(i).padStart(2, '0')); mSel.add(opt); }
-            ySel.value = now.getFullYear(); mSel.value = String(now.getMonth() + 1).padStart(2, '0');
+        // UI 渲染與邏輯
+        function showToast() {
+            const t = document.getElementById('toast');
+            t.classList.add('active');
+            setTimeout(() => t.classList.remove('active'), 2000);
         }
 
-        function saveToHistory() {
-            const dateS = document.getElementById('todayDate').value;
-            const dayRecord = {
-                date: dateS,
-                records: staffData.filter(s => s.logs.length > 0).map(s => ({
-                    id: s.id,
-                    totalAmt: s.logs.reduce((sum, l) => sum + l.amt, 0),
-                    desAmt: s.logs.filter(l => l.isD).reduce((sum, l) => sum + l.amt, 0),
-                    fullLogs: JSON.parse(JSON.stringify(s.logs))
-                }))
-            };
-            if (dayRecord.records.length === 0) return alert('今日尚無帳目可儲存');
-            const existingIdx = historyData.findIndex(h => h.date === dateS);
-            if (existingIdx > -1) { if (!confirm('該日期已有存檔，是否覆蓋？')) return; historyData[existingIdx] = dayRecord; } 
-            else { historyData.push(dayRecord); }
-            save(); showT('帳目已儲存至 ' + dateS);
-        }
-
-        function openReport() {
-            initReportFilters();
-            document.getElementById('btnHistoryView').style.display = 'block';
-            document.getElementById('btnReportBack').style.display = 'none';
-            const selYear = document.getElementById('reportYear').value;
-            const selMonth = document.getElementById('reportMonth').value;
-            const monthPrefix = `${selYear}-${selMonth}`;
-            const monthLogs = historyData.filter(h => h.date.startsWith(monthPrefix));
-            const summary = {};
-            let totalPersons = 0, totalCash = 0, totalSign = 0, totalCoupon = 0, totalDes = 0;
-            monthLogs.forEach(day => {
-                day.records.forEach(r => {
-                    if (!summary[r.id]) summary[r.id] = { total: 0, des: 0 };
-                    const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
-                    const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
-                    const filteredDes = filteredLogs.filter(l => l.isD).reduce((sum, l) => sum + l.amt, 0);
-                    
-                    summary[r.id].total += filteredTotal; 
-                    summary[r.id].des += filteredDes;
-
-                    filteredLogs.forEach(l => {
-                        totalPersons += 1;
-                        if (l.isD) totalDes += 1;
-                        if (l.isP) totalSign += 1;
-                        else if (l.isC) totalCoupon += 1;
-                        else totalCash += 1;
-                    });
-                });
+        function showPage(pid) {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+            document.getElementById(pid).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach((n, i) => {
+                n.classList.remove('active');
+                if ((pid === 'page-rank' && i === 0) || (pid === 'page-staff' && i === 1) || (pid === 'page-history' && i === 2)) n.classList.add('active');
             });
-            const sortedIds = Object.keys(summary).sort((a, b) => Number(a) - Number(b));
-            let html = `<table class="report-table"><thead><tr><th>師傅</th><th>收入</th><th>指名率</th><th>節數</th></tr></thead><tbody>`;
-            let grandTotal = 0;
-            sortedIds.forEach(id => {
-                const data = summary[id];
-                const name = id > 0 ? id + ' 號' : getSpecialName(Number(id));
-                const desRate = data.total > 0 ? Math.round((data.des / data.total) * 100) : 0;
-                const units = data.total > 0 ? (data.total / 700).toFixed(1) : 0;
-                grandTotal += data.total;
-                html += `<tr><td><b>${name}</b></td><td style="color:var(--green);">$${data.total}</td><td>${desRate}%</td><td style="color:var(--orange);">${units}</td></tr>`;
-            });
-            html += `</tbody></table><div class="summary-box">
-                <div class="summary-item"><span class="summary-label">全店總人數</span><span class="summary-val">${totalPersons}</span></div>
-                <div class="summary-item"><span class="summary-label">指名總人數</span><span class="summary-val">${totalDes}</span></div>
-                <div class="summary-item"><span class="summary-label">簽名總人數</span><span class="summary-val">${totalSign}</span></div>
-                <div class="summary-item"><span class="summary-label">卷總人數</span><span class="summary-val">${totalCoupon}</span></div>
-            </div><div style="margin-top:20px; text-align:right; font-size:22px; color:var(--green); font-weight:bold;">${selMonth}月業績累計：$${grandTotal}</div>`;
-            document.getElementById('reportArea').innerHTML = html;
-            document.getElementById('reportModal').style.display = 'flex';
         }
 
-        function renderHistoryList() {
-            document.getElementById('btnHistoryView').style.display = 'none';
-            document.getElementById('btnReportBack').style.display = 'block';
-            const selYear = document.getElementById('reportYear').value;
-            const selMonth = document.getElementById('reportMonth').value;
-            const monthPrefix = `${selYear}-${selMonth}`;
-            
-            let filteredHistory = historyData.map((h, originalIndex) => ({...h, originalIndex}))
-                                           .filter(h => h.date.startsWith(monthPrefix))
-                                           .reverse();
+        function render() {
+            // 看板渲染
+            const rankGrid = document.getElementById('rank-grid');
+            const inRankStaff = staffData.filter(s => s.inRank).sort((a, b) => a.joinTime - b.joinTime);
+            rankGrid.innerHTML = inRankStaff.map(s => `
+                <div class="staff-btn in-rank ${s.bookings.length ? 'has-book' : ''}" onclick="openAct(${s.id})">
+                    <div class="staff-name">${s.id < 0 ? (s.id === -1 ? '1F' : '2F') : s.id}</div>
+                    <div class="staff-id">${s.bookings.length ? s.bookings[0].time : '空閒'}</div>
+                    ${s.bookings.length ? `<div class="badge">${s.bookings.length}</div>` : ''}
+                </div>
+            `).join('');
 
-            let html = filteredHistory.map((day) => {
-                const dayIndex = day.originalIndex;
-                let dayPersons = 0, dayTotalAmt = 0, dayDes = 0, daySign = 0, dayCoupon = 0;
-                let tableRows = day.records.map((r, rIdx) => {
-                    const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
-                    const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
-                    const filteredDes = filteredLogs.filter(l => l.isD).reduce((sum, l) => sum + l.amt, 0);
-                    
-                    const name = r.id > 0 ? r.id + ' 號' : getSpecialName(r.id);
-                    const desRate = filteredTotal > 0 ? Math.round((filteredDes / filteredTotal) * 100) : 0;
-                    const units = filteredTotal > 0 ? (filteredTotal / 700).toFixed(1) : 0;
-                    const uid = `h-${dayIndex}-${rIdx}`;
-                    dayTotalAmt += filteredTotal;
-                    
-                    let detailHtml = r.fullLogs ? r.fullLogs.map((l, lIdx) => {
-                        if(!l.isPri) {
-                            dayPersons += 1;
-                            if(l.isD) dayDes += 1;
-                            if(l.isP) daySign += 1;
-                            else if(l.isC) dayCoupon += 1;
-                        }
+            // 技師頁渲染
+            const staffGrid = document.getElementById('staff-grid');
+            staffGrid.innerHTML = staffData.filter(s => s.id >= 0).sort((a, b) => a.id - b.id).map(s => `
+                <div class="staff-btn ${s.inRank ? 'in-rank' : ''}" onclick="tRank(${s.id})">
+                    <div class="staff-name">${s.id}</div>
+                    <div class="staff-id">${s.inRank ? '上線中' : '休假'}</div>
+                </div>
+            `).join('');
 
-                        let tags = []; 
-                        if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
-                        if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
-                        if(l.isPri) tags.push('[企]');
-                        const timeTag = l.time ? `<span style="color:#888; font-size:14px; margin-left:15px;">${l.time}</span>` : '';
-                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}${timeTag}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button></div>`;
-                    }).join('') : '';
-
-                    return `
-                        <tr onclick="toggleH('${uid}')" style="cursor:pointer;">
-                            <td><b>${name}</b></td>
-                            <td style="color:var(--green);">$${filteredTotal}</td>
-                            <td>${desRate}%</td>
-                            <td style="color:var(--orange);">${units}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="padding:0; border:none;">
-                                <div id="${uid}" class="history-detail-panel">${detailHtml}</div>
-                            </td>
-                        </tr>`;
-                }).join('');
-
-                return `<div class="history-card">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b style="color:var(--orange)">${day.date}</b></div>
-                    <table class="report-table">
-                        <thead><tr><th>師傅</th><th>收入</th><th>指名率</th><th>節數</th></tr></thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-                    <div class="summary-box" style="margin-top:15px; background: rgba(255,255,255,0.05);">
-                        <div class="summary-item"><span class="summary-label">當日人數</span><span class="summary-val">${dayPersons}</span></div>
-                        <div class="summary-item"><span class="summary-label">指名人數</span><span class="summary-val">${dayDes}</span></div>
-                        <div class="summary-item"><span class="summary-label">簽名人數</span><span class="summary-val">${daySign}</span></div>
-                        <div class="summary-item"><span class="summary-label">卷人數</span><span class="summary-val">${dayCoupon}</span></div>
-                        <div class="summary-item" style="grid-column: span 2; border-top: 1px solid #444; padding-top: 10px; margin-top: 5px;"><span class="summary-label">當日總業績</span><span class="summary-val" style="color:var(--green)">$${dayTotalAmt}</span></div>
+            // 歷史帳目
+            const histList = document.getElementById('history-list');
+            histList.innerHTML = historyData.slice().reverse().map(h => `
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; color:#888;">
+                        <span>${h.date}</span><span>${h.time}</span>
                     </div>
-                    <button class="btn-del" style="width:100%; margin-top:15px;" onclick="deleteHistoryDay(${dayIndex})">刪除此日紀錄</button>
-                </div>`;
-            }).join('');
-            document.getElementById('reportArea').innerHTML = html || '此月份暫無歷史紀錄';
+                    <div style="font-size:24px; font-weight:bold;">${h.sid < 0 ? (h.sid === -1 ? '1F' : '2F') : '師傅 ' + h.sid} － $${h.amt}</div>
+                    <div style="margin-top:5px; color:var(--green)">分成：$${Math.floor(h.amt * 0.7)} (0.7)</div>
+                </div>
+            `).join('');
+
+            // 下拉選單更新
+            const sel = document.getElementById('bookStaff');
+            sel.innerHTML = staffData.filter(s => s.inRank).map(s => `<option value="${s.id}">${s.id < 0 ? (s.id === -1 ? '1F' : '2F') : s.id}</option>`).join('');
         }
 
-        function toggleH(id) { const el = document.getElementById(id); if(el) el.style.display = el.style.display==='block'?'none':'block'; }
-        
-        function openHE(d, r, l, isLive = false) {
-            activeHE = { d, r, l, isLive };
-            if (isLive) tempHE = JSON.parse(JSON.stringify(staffData.find(s=>s.id===d).logs[l]));
-            else tempHE = JSON.parse(JSON.stringify(historyData[d].records[r].fullLogs[l]));
-            document.getElementById('he_amt').value = tempHE.amt;
-            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri'].forEach(k => { 
-                const target = k === 'isD' ? 'he_isD' : (k === 'isPri' ? 'he_isPri' : 'he_'+k); 
-                const btn = document.getElementById(target); 
-                if(btn) btn.classList.toggle('tag-active', !!tempHE[k]); 
-            });
-            document.getElementById('historyEditModal').style.display = 'flex';
+        function tRank(sid) {
+            const s = staffData.find(x => x.id === sid);
+            s.inRank = !s.inRank;
+            if (s.inRank) s.joinTime = Date.now();
+            save();
+            showToast();
         }
 
-        function toggleHE(k) {
-            if(k==='oilS'){ tempHE.oilS=!tempHE.oilS; if(tempHE.oilS) tempHE.oilB=false; }
-            else if(k==='oilB'){ tempHE.oilB=!tempHE.oilB; if(tempHE.oilB) tempHE.oilS=false; }
-            else { tempHE[k]=!tempHE[k]; }
-            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri'].forEach(key => { 
-                const target = key === 'isD' ? 'he_isD' : (key === 'isPri' ? 'he_isPri' : 'he_'+key);
-                const btn = document.getElementById(target); 
-                if(btn) btn.classList.toggle('tag-active', !!tempHE[key]); 
-            });
+        function openAct(sid) {
+            curSid = sid;
+            document.getElementById('actTitle').innerText = sid < 0 ? (sid === -1 ? '1F 房間' : '2F 房間') : '師傅 ' + sid;
+            document.getElementById('actModal').style.display = 'flex';
         }
 
-        function saveHistoryEdit() {
-            tempHE.amt = parseInt(document.getElementById('he_amt').value) || 0;
-            const { d, r, l, isLive } = activeHE;
-            if (isLive) { staffData.find(s=>s.id===d).logs[l] = tempHE; closeM('logModal'); } 
-            else { historyData[d].records[r].fullLogs[l] = tempHE; const logs = historyData[d].records[r].fullLogs; historyData[d].records[r].totalAmt = logs.reduce((s, x) => s + x.amt, 0); historyData[d].records[r].desAmt = logs.filter(x => x.isD).reduce((s, x) => s + x.amt, 0); renderHistoryList(); }
-            save(); closeM('historyEditModal'); render(); showT('修正成功');
+        function closeM(id) { document.getElementById(id).style.display = 'none'; }
+
+        function handleAct(type) {
+            closeM('actModal');
+            if (type === 'amt') document.getElementById('amtModal').style.display = 'flex';
+            else if (type === 'book') showPage('page-book');
+            else if (type === 'log') openLog(curSid);
         }
 
-        function deleteHistoryDay(idx) { if (confirm('確定刪除？')) { historyData.splice(idx, 1); save(); renderHistoryList(); } }
-
-        function render(){
-            const now = getTW();
-            const dateS = document.getElementById('todayDate').value;
-            const timeS = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-            const nowMs = now.getTime();
-            document.getElementById('clock').innerText = timeS; 
-            
-            if(document.getElementById('settleTitle')) document.getElementById('settleTitle').innerText = isBoss ? '店內結帳' : '師傅結帳';
-            if(document.getElementById('modeBtn')) document.getElementById('modeBtn').innerText = isBoss ? '切換師傅' : '切換店內';
-            
-            const tentativeMap = {}; 
-            const spReqs = []; 
-            specialIds.forEach(spId => {
-                const s = staffData.find(x => x.id === spId);
-                if (s) s.bookings.forEach(b => spReqs.push({...b, spId}));
-            });
-            
-            spReqs.sort((a,b) => {
-                const aPri = (a.spId === -1 || a.spId === -2) ? 1 : 0;
-                const bPri = (b.spId === -1 || b.spId === -2) ? 1 : 0;
-                if (aPri !== bPri) return bPri - aPri; 
-                return a.time.localeCompare(b.time);   
-            });
-
-            const sortedRankCandidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
-                const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
-                return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
-            });
-
-            const tentDetailsForStaff = {}; 
-
-            spReqs.forEach(req => {
-                const reqStart = new Date(`${req.date}T${req.time}`).getTime();
-                const reqEnd = reqStart + (req.dur * 60000);
-                const targetSid = sortedRankCandidates.find(s => {
-                    if (!tentDetailsForStaff[s.id]) tentDetailsForStaff[s.id] = [];
-                    const staffTentative = tentDetailsForStaff[s.id];
-                    if (req.spId === -1 && !maleIds.includes(s.id)) return false;
-                    if (req.spId === -2 && !femaleIds.includes(s.id)) return false;
-                    const hasConflictWithBooking = s.bookings.some(b => {
-                        const bS = new Date(`${b.date}T${b.time}`).getTime();
-                        const bE = bS + (b.dur * 60000);
-                        return (reqStart < bE && reqEnd > bS);
-                    });
-                    if (hasConflictWithBooking) return false;
-                    const hasConflictWithTentative = staffTentative.some(t => {
-                        const tS = new Date(`${t.date}T${t.time}`).getTime();
-                        const tE = tS + (t.dur * 60000);
-                        return (reqStart < tE && reqEnd > tS);
-                    });
-                    return !hasConflictWithTentative;
-                });
-                if (targetSid) {
-                    if (!tentDetailsForStaff[targetSid.id]) tentDetailsForStaff[targetSid.id] = [];
-                    tentDetailsForStaff[targetSid.id].push(req);
-                    tentativeMap[targetSid.id] = tentDetailsForStaff[targetSid.id][0]; 
-                }
-            });
-
-            let changed = false;
-            staffData.forEach(s => {
-                s.bookings = s.bookings.filter(b => {
-                    const sMs = new Date(`${b.date}T${b.time}`).getTime();
-                    const eMs = sMs + (b.dur * 60000);
-                    if (nowMs > eMs) {
-                        if (b.amt > 0) {
-                            let logData = {
-                                amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC,
-                                isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri,
-                                time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}`
-                            };
-                            
-                            if (s.id <= 0) {
-                                let assignedSid = null;
-                                for (let sid in tentDetailsForStaff) {
-                                    if (tentDetailsForStaff[sid].some(req => req.id === b.id)) {
-                                        assignedSid = parseInt(sid);
-                                        break;
-                                    }
-                                }
-                                if (assignedSid) {
-                                    const targetStaff = staffData.find(x => x.id === assignedSid);
-                                    if (targetStaff) targetStaff.logs.push(logData);
-                                } else {
-                                    s.logs.push(logData); 
-                                }
-                            } else {
-                                s.logs.push(logData);
-                            }
-                            changed = true;
-                        }
-                        return false;
-                    }
-                    return true;
-                });
-            });
-            if(changed) save();
-
-            const rA = document.getElementById('rankArea'); rA.innerHTML = '';
-            const rankedStaff = staffData.filter(s=>s.inRank && s.id > 0).sort((a,b)=>{ 
-                const aOngoing = a.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
-                const bOngoing = b.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
-                const aTentActive = tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => nowMs >= new Date(`${t.date}T${t.time}`).getTime());
-                const bTentActive = tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => nowMs >= new Date(`${t.date}T${t.time}`).getTime());
-                const aBusy = aOngoing || aTentActive;
-                const bBusy = bOngoing || bTentActive;
-                if (aBusy && !bBusy) return 1; if (!aBusy && bBusy) return -1;
-                const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
-                return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
-            }).slice(0, 12); 
-
-            const count = rankedStaff.length; const itemHeight = count <= 4 ? 120 : Math.max(65, 520 / count);
-            rankedStaff.forEach((s,i)=>{
-                const allUpcoming = [];
-                s.bookings.forEach(b => {
-                    const sMs = new Date(`${b.date}T${b.time}`).getTime();
-                    const eMs = sMs + (b.dur * 60000);
-                    if (eMs > nowMs) allUpcoming.push({ ...b, type: 'real', sMs, eMs });
-                });
-                if (tentDetailsForStaff[s.id]) {
-                    tentDetailsForStaff[s.id].forEach(t => {
-                        const sMs = new Date(`${t.date}T${t.time}`).getTime();
-                        const eMs = sMs + (t.dur * 60000);
-                        if (eMs > nowMs) allUpcoming.push({ ...t, type: 'tentative', sMs, eMs });
-                    });
-                }
-                allUpcoming.sort((a, b) => a.sMs - b.sMs);
-
-                let displayHtml = '';
-                const nextTwo = allUpcoming.slice(0, 2);
-                
-                if (nextTwo.length === 0) {
-                    displayHtml = '<span class="b-text">現場</span>';
-                } else {
-                    nextTwo.forEach((item, idx) => {
-                        const isBusyNow = nowMs >= item.sMs && nowMs <= item.eMs;
-                        const endObj = new Date(item.eMs);
-                        const endT = `${String(endObj.getHours()).padStart(2,'0')}:${String(endObj.getMinutes()).padStart(2,'0')}`;
-                        
-                        if (isBusyNow) {
-                            displayHtml += `<div class="busy-text">${endT} 結束</div>`;
-                        } else {
-                            const label = item.type === 'tentative' ? '暫定' : '';
-                            displayHtml += `<div class="${item.type === 'tentative' ? 'tentative-text' : 'b-text'}">${item.time} (${item.dur}分) ${label}</div>`;
-                        }
-                    });
-                }
-
-                const div = document.createElement('div'); div.className='rank-item'; div.style.top=(i*itemHeight)+'px'; div.style.height = (itemHeight - 8) + 'px'; 
-                const hasBusy = nextTwo.some(item => nowMs >= item.sMs && nowMs <= item.eMs);
-                const hasTentative = nextTwo.some(item => item.type === 'tentative' && nowMs < item.sMs);
-                div.style.borderColor = hasBusy ? 'var(--red)' : (hasTentative ? 'var(--yellow)' : 'var(--green)');
-                div.onclick=()=>{ selIds=[s.id]; document.getElementById('actTitle').innerText=s.id+'號'; resetModes(); document.getElementById('actModal').style.display='flex'; };
-                div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:38px;margin-right:15px;font-weight:bold;">${s.id}</span><div style="display:flex; flex-direction:column; gap:2px;">${displayHtml}</div></div><b style="font-size:32px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
-                rA.appendChild(div);
-            });
-
-            document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${s.id}</div>`).join('');
-            document.getElementById('bookStaffSpecial').innerHTML = specialIds.map(id => { const c = specialCounts[id]; return `<div class="staff-btn staff-btn-sm ${c > 0 ? 'active' : ''}" style="position:relative;" onclick="openPerson(${id})">${getSpecialName(id)}${c > 0 ? `<div class="count-badge">${c}</div>` : ''}</div>`; }).join('');
-            let selText = []; selIds.forEach(id => selText.push(id + '號')); specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
-            document.getElementById('selNumDisp').innerText = selText.length > 0 ? selText.join(', ') : '請選擇';
-            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div class="staff-btn ${s.inRank?'active':''}" onclick="tRank(${s.id})">${s.id}</div>`).join('');
-            updateSettleAndList();
-        }
-
-        function openPerson(id) { tempSpecId = id; document.getElementById('personTitle').innerText = `選擇「${getSpecialName(id)}」人數`; document.getElementById('personModal').style.display = 'flex'; }
-        
-        function setPersonCount(count) { 
-            specialCounts[tempSpecId] = count; 
-            closeM('personModal'); 
-            if(document.getElementById('matchModal').style.display==='flex'){ 
-                const target = document.getElementById('m-'+tempSpecId);
-                if(target) {
-                    target.classList.toggle('selected', specialCounts[tempSpecId]>0); 
-                    const badge = target.querySelector('.count-badge');
-                    if(badge) badge.innerText = count; 
-                    else if(count>0) target.innerHTML += `<div class="count-badge">${count}</div>`; 
-                    if(count === 0 && badge) badge.remove();
-                }
-            } 
-            render(); 
-        }
-
-        function tBookSel(id) { const idx = selIds.indexOf(id); if(idx > -1) selIds.splice(idx, 1); else selIds.push(id); render(); }
-
-        function updateSettleAndList() {
-            let gTotal = 0, gSettle = 0;
-            document.getElementById('settleBody').innerHTML = staffData.filter(s=>s.logs.length>0).map(s=>{
-                let sSum=0, bSum=0, tAmt=0;
-                s.logs.forEach(l=>{
-                    if(l.isPri) return;
-                    tAmt += l.amt; let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0;
-                    let sP = Math.round(l.amt * 0.7), bP = l.amt - sP;
-                    if(l.oilS) sSum += (sP + oil); else sSum += sP;
-                    if(l.oilB) bSum += (bP + oil); else bSum += bP;
-                    if(l.isP || l.isC) bSum -= l.amt; 
-                });
-                const curS = isBoss ? bSum : sSum; gTotal += tAmt; gSettle += curS;
-                return `<div onclick="showL(${s.id})" style="background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span>${s.id > 0 ? s.id+' 號' : getSpecialName(s.id)}</span><span style="color:var(--green);font-weight:bold;">總計 ${tAmt} 結算 ${curS}</span></div>`;
-            }).join('');
-            document.getElementById('settleGrandTotal').innerHTML = `<div style="padding:20px;background:#2c2c2e;border-radius:15px;margin-top:15px;border:1.5px solid var(--purple);"><span>總計：$${gTotal} / 結算：$${gSettle}</span></div>`;
-            const allB = []; staffData.forEach(s => s.bookings.forEach(b => allB.push({...b, sid:s.id})));
-            allB.sort((a,b)=> (new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
-            document.getElementById('fullBookList').innerHTML = allB.map(b => `<div style="background:#222;padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span>${b.date} <b>${b.time}</b> | ${b.sid > 0 ? b.sid+'號' : getSpecialName(b.sid)} (${b.dur}分)${b.amt > 0 ? ' [有設金額]' : ''}</span><div><button onclick="editB(${b.sid},${b.id})" class="btn-edit">改</button><button onclick="delB(${b.sid},${b.id})" class="btn-del">刪</button></div></div>`).join('');
-        }
-
-        function showL(id){
-            selIds=[id]; const s=staffData.find(x=>x.id===id); 
-            document.getElementById('logTitle').innerText = (id > 0 ? id+'號' : getSpecialName(id))+'今日明細';
-            document.getElementById('logList').innerHTML = s.logs.map((l,i)=>{
-                let tags = []; 
-                if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
-                if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
-                if(l.isPri) tags.push('[企]');
-                const timeStr = l.time ? `<span style="font-size:16px;color:#888;margin-left:15px;">${l.time}</span>` : '';
-                return `<div style="padding:15px 10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;flex-direction:column;"><span style="font-size:24px;font-weight:bold;color:${l.isPri?'var(--purple)':'var(--green)'};">$${l.amt}${timeStr}</span><span style="font-size:16px;color:var(--orange);">${tags.join(' ')}</span></div><div><button onclick="openHE(${id},0,${i},true)" class="btn-edit" style="margin-right:5px;">改</button><button onclick="delL(${id},${i})" class="btn-del">刪</button></div></div>`;
-            }).join('');
-            document.getElementById('logModal').style.display='flex';
-        }
-
-        function checkAvailability(startMs, endMs, selStaffIds, newCounts) {
-            const realStaff = staffData.filter(s => s.id > 0 && s.inRank);
-            let availablePool = realStaff.filter(s => {
-                const isBusy = s.bookings.some(b => {
-                    if (editBookId && b.id === editBookId) return false;
-                    const bS = new Date(`${b.date}T${b.time}`).getTime();
-                    const bE = bS + (b.dur * 60000);
-                    return (startMs < bE && endMs > bS);
-                });
-                return !isBusy;
-            });
-
-            let existingMaleReq = 0, existingFemaleReq = 0, existingAnyReq = 0;
-            [-1, -2, 0].forEach(spId => {
-                const spStaff = staffData.find(s => s.id === spId);
-                if (spStaff) {
-                    const overlaps = spStaff.bookings.filter(b => {
-                        if (editBookId && b.id === editBookId) return false;
-                        const bS = new Date(`${b.date}T${b.time}`).getTime();
-                        const bE = bS + (b.dur * 60000);
-                        return (startMs < bE && endMs > bS);
-                    });
-                    if (spId === -1) existingMaleReq += overlaps.length;
-                    if (spId === -2) existingFemaleReq += overlaps.length;
-                    if (spId === 0) existingAnyReq += overlaps.length;
-                }
-            });
-
-            const reqMale = (newCounts['-1'] || 0) + existingMaleReq;
-            const reqFemale = (newCounts['-2'] || 0) + existingFemaleReq;
-            const reqAny = (newCounts['0'] || 0) + existingAnyReq;
-
-            for (let sid of selStaffIds) {
-                const idx = availablePool.findIndex(s => s.id === sid);
-                if (idx === -1) return false; 
-                availablePool.splice(idx, 1); 
-            }
-
-            let availableMales = availablePool.filter(s => maleIds.includes(s.id)).length;
-            let availableFemales = availablePool.filter(s => femaleIds.includes(s.id)).length;
-            if (availableMales < reqMale) return false;
-            if (availableFemales < reqFemale) return false;
-            let remaining = availablePool.length - reqMale - reqFemale;
-            if (remaining < reqAny) return false;
-            return true;
-        }
-
-        function addB(fT = null, fD = null, mIds = null){
-            const d=document.getElementById('bookDate').value, t=fT || document.getElementById('bookTime').value, du=fD || parseInt(document.getElementById('bookDur').value), nt=document.getElementById('bookNote').value;
-            const activeMode = fT ? matchMode : bookMode;
-            const activeAmt = fT ? (parseInt(document.getElementById('matchAmt').value) || 0) : (parseInt(document.getElementById('bookAmt').value) || 0);
-
-            const aS = specialIds.filter(id => specialCounts[id] > 0); let tIds = mIds ? mIds : selIds;
-            if(tIds.length===0 && aS.length===0) return alert('請選取號碼或人數'); if(!t) return alert('請填寫時間');
-            const start = new Date(`${d}T${t}`).getTime(), end = start + (du * 60000);
-
-            if (!checkAvailability(start, end, tIds, specialCounts)) {
-                return alert('時段衝突！該時段人力不足或指定師傅忙碌/未上班。');
-            }
-
-            if(editBookId !== null) staffData.forEach(s => { s.bookings = s.bookings.filter(b => b.id !== editBookId); });
-            
-            const bData = {
-                id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt,
-                amt: activeAmt, isD: activeMode.des, isP: activeMode.sign, isC: activeMode.coupon,
-                isExtra: activeMode.extra, oilS: activeMode.oilS, oilB: activeMode.oilB, isPri: activeMode.private
+        function hAmt(fixed) {
+            const amt = fixed || parseInt(document.getElementById('customAmt').value);
+            if (!amt) return;
+            const now = new Date();
+            const log = {
+                date: now.toLocaleDateString(),
+                time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                amt: amt,
+                sid: curSid
             };
-
-            tIds.forEach(sid => { const s = staffData.find(x=>x.id===sid); s.bookings.push({...bData, id:Date.now() + Math.random()}); });
-            aS.forEach(sid => { for(let i=0; i<specialCounts[sid]; i++) staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
+            historyData.push(log);
+            staffData.find(s => s.id === curSid).logs.push(log);
             
-            editBookId = null; 
-            document.getElementById('cancelBookBtn').style.display='none'; 
-            document.getElementById('bookNote').value = ''; 
-            document.getElementById('bookAmt').value = '';
-            selIds = []; 
-            specialCounts = { "0": 0, "-1": 0, "-2": 0 };
-            resetBookMode();
-            save(); render(); showT(fT ? '匹配預約成功' : '預約成功');
+            // 結帳後自動移除預約
+            const s = staffData.find(x => x.id === curSid);
+            if (s.bookings.length > 0) s.bookings.shift();
+
+            document.getElementById('customAmt').value = '';
+            closeM('amtModal');
+            save();
+            showToast();
         }
 
-        function openMatch(){
-            matchSels = []; 
-            specialCounts = { "0": 0, "-1": 0, "-2": 0 };
-            resetMatchMode();
-            document.getElementById('matchStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div id="m-${s.id}" class="match-btn-item" onclick="tMatch(${s.id}, false)">${s.id}</div>`).join('');
-            document.getElementById('matchSpecialGrid').innerHTML = specialIds.map(id => `<div id="m-${id}" class="match-btn-item" onclick="tMatch(${id}, true)">${getSpecialName(id)}</div>`).join('');
-            const mDur = document.getElementById('matchDur'); mDur.innerHTML = ''; for(let i=15; i<=180; i+=15) mDur.innerHTML+=`<option value="${i}">${i} 分鐘</option>`; mDur.value = 60;
-            const sHr = document.getElementById('matchStartHr'), eHr = document.getElementById('matchEndHr');
-            sHr.innerHTML = ''; eHr.innerHTML = '';
-            for(let i=0; i<24; i++){ let opt=`<option value="${i}">${String(i).padStart(2,'0')}:00</option>`; sHr.innerHTML+=opt; eHr.innerHTML+=opt; }
-            sHr.value = getTW().getHours(); eHr.value = 23;
-            document.getElementById('matchResults').innerHTML = ''; document.getElementById('matchModal').style.display='flex';
-        }
-        function tMatch(id, isSpec){ if(isSpec) openPerson(id); else { const idx = matchSels.indexOf(id); if(idx>-1) matchSels.splice(idx,1); else matchSels.push(id); document.getElementById('m-'+id).classList.toggle('selected', matchSels.includes(id)); } }
-        
-        function runMatch(){
-            const aS = specialIds.filter(id => specialCounts[id] > 0); 
-            if(matchSels.length===0 && aS.length===0) return alert('請選擇師傅或人數');
-            const dur = parseInt(document.getElementById('matchDur').value); 
-            const resArea = document.getElementById('matchResults'); resArea.innerHTML = '計算中...';
-            const startHr = parseInt(document.getElementById('matchStartHr').value);
-            const endHr = parseInt(document.getElementById('matchEndHr').value);
-            const now = getTW(); let check = new Date(now.getTime());
-            if (check.getHours() < startHr || (check.getHours() === startHr && check.getMinutes() === 0 && check.getTime() < now.getTime())) { 
-                check.setHours(startHr, 0, 0, 0); 
-            } else {
-                const m = check.getMinutes(); const remainder = m % 5;
-                if (remainder !== 0) { check.setMinutes(m + (5 - remainder)); check.setSeconds(0, 0); } else { check.setSeconds(0, 0); }
-            }
-            let found = []; let safetyLimit = 1440;
-            while(found.length < 5 && safetyLimit > 0){
-                if (check.getHours() >= endHr || check.getDate() !== now.getDate()) { if (!(check.getHours() === endHr && check.getMinutes() === 0)) break; }
-                const start = check.getTime(), end = start + (dur * 60000);
-                const ok = checkAvailability(start, end, matchSels, specialCounts);
-                if(ok){
-                    const timeStr = `${String(check.getHours()).padStart(2,'0')}:${String(check.getMinutes()).padStart(2,'0')}`;
-                    if (!found.includes(timeStr)) found.push(timeStr);
-                }
-                check.setMinutes(check.getMinutes() + 5); safetyLimit--;
-            }
-            resArea.innerHTML = found.length ? found.map(t=>`<div class="result-item"><b>${t} (${dur}分)</b><button onclick="addB('${t}',${dur}, [${matchSels.join(',')}]);closeM('matchModal')" style="background:var(--green);border:none;color:#fff;padding:8px 15px;border-radius:8px;cursor:pointer;">選用</button></div>`).join('') : '此區間無空檔';
+        function addB() {
+            const sid = parseInt(document.getElementById('bookStaff').value);
+            const note = document.getElementById('bookNote').value;
+            const time = document.getElementById('bookTime').value;
+            const dur = document.getElementById('bookDur').value;
+            if (!time) return alert('請輸入時間');
+            
+            staffData.find(s => s.id === sid).bookings.push({ id: Date.now(), time, dur, note });
+            save();
+            showPage('page-rank');
+            showToast();
         }
 
-        function editB(sid, bid){
-            const s = staffData.find(x=>x.id===sid); const b = s.bookings.find(x=>x.id===bid); if(!b) return;
-            editBookId = bid; selIds = [sid]; document.getElementById('bookDate').value = b.date; document.getElementById('bookTime').value = b.time; document.getElementById('bookDur').value = b.dur; document.getElementById('bookNote').value = b.note || '';
-            document.getElementById('bookAmt').value = b.amt || '';
-            bookMode = {des:!!b.isD, extra:!!b.isExtra, sign:!!b.isP, coupon:!!b.isC, oilS:!!b.oilS, oilB:!!b.oilB, private:!!b.isPri};
-            updateBookTags();
-            document.getElementById('cancelBookBtn').style.display = 'block'; showPage('page-book');
+        function openLog(sid) {
+            const s = staffData.find(x => x.id === sid);
+            document.getElementById('logTitle').innerText = (sid < 0 ? (sid === -1 ? '1F' : '2F') : sid) + ' 的近期紀錄';
+            const list = document.getElementById('logList');
+            list.innerHTML = s.logs.length ? s.logs.slice().reverse().map(l => `
+                <div class="log-item">
+                    <div><b>$${l.amt}</b> <small>${l.time}</small></div>
+                    <div style="color:var(--green)">$${Math.floor(l.amt * 0.7)}</div>
+                </div>
+            `).join('') : '<p style="color:#666">暫無紀錄</p>';
+            document.getElementById('logModal').style.display = 'flex';
         }
 
-        function cancelEditB(){ editBookId = null; document.getElementById('cancelBookBtn').style.display = 'none'; document.getElementById('bookNote').value = ''; document.getElementById('bookAmt').value = ''; resetBookMode(); showPage('page-list'); }
-        
-        function showPage(p){ 
-            if(p !== 'page-book') { selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; }
-            document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active', x.id===p)); 
-            render(); 
-        }
+        function clearRank() { if(confirm('確定清空看板？')){ staffData.forEach(s=>s.inRank=false); save(); }}
+        function clearAllLogs() { if(confirm('確定永久清空所有帳目紀錄？')){ historyData=[]; staffData.forEach(s=>s.logs=[]); save(); }}
+        function toggleMode() { isBoss = !isBoss; alert(isBoss ? '進入管理模式' : '進入員工模式'); }
 
-        function toggleBk(t){ bookMode[t]=!bookMode[t]; updateBookTags(); }
-        function toggleOilBk(t) { if(t==='oilS'){bookMode.oilS=!bookMode.oilS; if(bookMode.oilS)bookMode.oilB=false;} else{bookMode.oilB=!bookMode.oilB; if(bookMode.oilS)bookMode.oilS=false;} updateBookTags(); }
-        function resetBookMode() { bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; updateBookTags(); }
-        function updateBookTags() { ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('bk_'+k).style.borderColor=bookMode[k]?'#fff':'transparent'); }
+        // 初始化分鐘選項
+        const dD = document.getElementById('bookDur'); 
+        for(let i=15;i<=180;i+=15) dD.innerHTML+=`<option value="${i}">${i} 分</option>`;
+        dD.value=60;
 
-        function toggleMa(t){ matchMode[t]=!matchMode[t]; updateMatchTags(); }
-        function toggleOilMa(t) { if(t==='oilS'){matchMode.oilS=!matchMode.oilS; if(matchMode.oilS)matchMode.oilB=false;} else{matchMode.oilB=!matchMode.oilB; if(matchMode.oilB)matchMode.oilS=false;} updateMatchTags(); }
-        function resetMatchMode() { matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; updateMatchTags(); document.getElementById('matchAmt').value=''; }
-        function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('ma_'+k).style.borderColor=matchMode[k]?'#fff':'transparent'); }
+        // 初始化金額按鈕
+        document.getElementById('priceBtnGroup').innerHTML = [700, 800, 1050, 1200, 1400, 1600].map(p=>`<button class="btn-action" style="background:#444; margin-bottom:0" onclick="hAmt(${p})">${p}</button>`).join('');
 
-        function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
-        function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilB=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
-        function resetModes() { 
-            mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; 
-            ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('m_'+k).style.borderColor='transparent'); 
-            document.getElementById('customAmt').value = ''; 
-        }
+        // 將函數掛載到 window 供 HTML 呼叫
+        window.showPage = showPage;
+        window.tRank = tRank;
+        window.openAct = openAct;
+        window.closeM = closeM;
+        window.handleAct = handleAct;
+        window.hAmt = hAmt;
+        window.addB = addB;
+        window.clearRank = clearRank;
+        window.clearAllLogs = clearAllLogs;
+        window.toggleMode = toggleMode;
 
-        function hAmt(a){ 
-            const amt = parseInt(a);
-            if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
-            const now = getTW();
-            const timeTag = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            const s = staffData.find(x=>x.id===selIds[0]); 
-            s.logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, time: timeTag}); 
-            closeM('amtModal'); save(); render(); 
-        }
-
-        function tRank(id){ let s=staffData.find(x=>x.id===id); s.inRank=!s.inRank; s.joinTime=Date.now(); save(); render(); }
-        function delB(sid,bid){ if(confirm('刪除？')){ const s=staffData.find(x=>x.id===sid); s.bookings=s.bookings.filter(b=>b.id!==bid); save(); render(); } }
-        function delL(sid,i){ staffData.find(x=>x.id===sid).logs.splice(i,1); save(); render(); closeM('logModal'); }
-        function handleAct(type){ closeM('actModal'); if(type==='amt') document.getElementById('amtModal').style.display='flex'; else showPage('page-book'); }
-        function toggleMode(){ isBoss=!isBoss; render(); }
-        function clearRank(){ if(confirm('清空？')){ staffData.forEach(s=>s.inRank=false); save(); render(); }}
-        function clearAllLogs(){ if(confirm('清空？')){ staffData.forEach(s=>s.logs=[]); save(); render(); }}
-
-        document.getElementById('priceBtnGroup').innerHTML = [200,350,500,700,800,1050,1200,1400].map(p=>`<button class="btn-action" style="background:#444" onclick="hAmt(${p})">${p}</button>`).join('');
-        const dD = document.getElementById('bookDur'); for(let i=15;i<=180;i+=15) dD.innerHTML+=`<option value="${i}">${i} 分</option>`; dD.value=60;
-        
-        const iNow = getTW(); 
-        const dateStr = iNow.getFullYear()+'-'+String(iNow.getMonth()+1).padStart(2,'0')+'-'+String(iNow.getDate()).padStart(2,'0');
-        document.getElementById('todayDate').value = dateStr;
-        document.getElementById('bookDate').value = dateStr;
-        
-        render(); setInterval(render, 30000);
     </script>
 </body>
 </html>
