@@ -6,7 +6,7 @@
     <title>排班與業績管理系統</title>
     <style>
         :root { --blue: #007AFF; --red: #ff3b30; --green: #30d158; --bg: #000; --card: #1c1c1e; --purple: #af52de; --orange: #ff9500; --yellow: #ffcc00; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; user-select: none; font-size: 20px; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; user-select: none; font-size: 20px; font-weight: 300; }
         #toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--green); padding: 15px 40px; border-radius: 50px; z-index: 9999; transition: 0.4s; font-size: 24px; }
         #toast.active { top: 30px; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; height: 80px; background: #111; display: flex; border-top: 1px solid #333; z-index: 1000; }
@@ -56,8 +56,11 @@
 
     <div id="page-rank" class="page active">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <div><div id="todayDate" style="color:#888; font-size:18px;"></div><h3 style="margin:0;">排班看板</h3></div>
-            <h3 id="clock" style="color:var(--green); margin:0;">00:00</h3>
+            <div>
+                <input type="date" id="todayDate" style="background:none; border:none; color:#888; font-size:20px; font-family:sans-serif; outline:none; padding:0;" onchange="render()">
+                <h3 style="margin:0;">排班看板</h3>
+            </div>
+            <h3 id="clock" style="color:var(--green); margin:0; font-size: 28px;">00:00</h3>
         </div>
         <div id="rankArea" style="position:relative; min-height:500px;"></div>
     </div>
@@ -253,8 +256,7 @@
         }
 
         function saveToHistory() {
-            const now = getTW();
-            const dateS = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+            const dateS = document.getElementById('todayDate').value;
             const dayRecord = {
                 date: dateS,
                 records: staffData.filter(s => s.logs.length > 0).map(s => ({
@@ -266,9 +268,9 @@
             };
             if (dayRecord.records.length === 0) return alert('今日尚無帳目可儲存');
             const existingIdx = historyData.findIndex(h => h.date === dateS);
-            if (existingIdx > -1) { if (!confirm('今日已有存檔，是否覆蓋？')) return; historyData[existingIdx] = dayRecord; } 
+            if (existingIdx > -1) { if (!confirm('該日期已有存檔，是否覆蓋？')) return; historyData[existingIdx] = dayRecord; } 
             else { historyData.push(dayRecord); }
-            save(); showT('帳目已儲存');
+            save(); showT('帳目已儲存至 ' + dateS);
         }
 
         function openReport() {
@@ -433,15 +435,14 @@
 
         function render(){
             const now = getTW();
-            const dateS = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+            const dateS = document.getElementById('todayDate').value;
             const timeS = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
             const nowMs = now.getTime();
             document.getElementById('clock').innerText = timeS; 
-            document.getElementById('todayDate').innerText = dateS;
+            
             if(document.getElementById('settleTitle')) document.getElementById('settleTitle').innerText = isBoss ? '店內結帳' : '師傅結帳';
             if(document.getElementById('modeBtn')) document.getElementById('modeBtn').innerText = isBoss ? '切換師傅' : '切換店內';
             
-            // 步驟1: 先算出當下所有特殊標籤預約應該由誰承接
             const tentativeMap = {}; 
             const spReqs = []; 
             specialIds.forEach(spId => {
@@ -452,8 +453,8 @@
             spReqs.sort((a,b) => {
                 const aPri = (a.spId === -1 || a.spId === -2) ? 1 : 0;
                 const bPri = (b.spId === -1 || b.spId === -2) ? 1 : 0;
-                if (aPri !== bPri) return bPri - aPri; // 優先權高的排前面
-                return a.time.localeCompare(b.time);   // 優先權相同時依時間排序
+                if (aPri !== bPri) return bPri - aPri; 
+                return a.time.localeCompare(b.time);   
             });
 
             const sortedRankCandidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
@@ -491,7 +492,6 @@
                 }
             });
 
-            // 步驟2: 根據剛剛算出來的派單結果，進行預約結算
             let changed = false;
             staffData.forEach(s => {
                 s.bookings = s.bookings.filter(b => {
@@ -505,7 +505,6 @@
                                 time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}`
                             };
                             
-                            // 如果是特殊暫定單（不指定等），找出當時是指派給哪位真實師傅
                             if (s.id <= 0) {
                                 let assignedSid = null;
                                 for (let sid in tentDetailsForStaff) {
@@ -518,7 +517,7 @@
                                     const targetStaff = staffData.find(x => x.id === assignedSid);
                                     if (targetStaff) targetStaff.logs.push(logData);
                                 } else {
-                                    s.logs.push(logData); // 防呆機制
+                                    s.logs.push(logData); 
                                 }
                             } else {
                                 s.logs.push(logData);
@@ -806,7 +805,7 @@
         function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('ma_'+k).style.borderColor=matchMode[k]?'#fff':'transparent'); }
 
         function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
-        function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
+        function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilB=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
         function resetModes() { 
             mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; 
             ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('m_'+k).style.borderColor='transparent'); 
@@ -833,7 +832,12 @@
 
         document.getElementById('priceBtnGroup').innerHTML = [200,350,500,700,800,1050,1200,1400].map(p=>`<button class="btn-action" style="background:#444" onclick="hAmt(${p})">${p}</button>`).join('');
         const dD = document.getElementById('bookDur'); for(let i=15;i<=180;i+=15) dD.innerHTML+=`<option value="${i}">${i} 分</option>`; dD.value=60;
-        const iNow = getTW(); document.getElementById('bookDate').value = iNow.getFullYear()+'-'+String(iNow.getMonth()+1).padStart(2,'0')+'-'+String(iNow.getDate()).padStart(2,'0');
+        
+        const iNow = getTW(); 
+        const dateStr = iNow.getFullYear()+'-'+String(iNow.getMonth()+1).padStart(2,'0')+'-'+String(iNow.getDate()).padStart(2,'0');
+        document.getElementById('todayDate').value = dateStr;
+        document.getElementById('bookDate').value = dateStr;
+        
         render(); setInterval(render, 30000);
     </script>
 </body>
