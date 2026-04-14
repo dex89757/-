@@ -47,6 +47,8 @@
         .summary-val { color: #fff; font-size: 18px; font-weight: bold; }
         .report-select-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .report-select { flex: 1; background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 10px; font-size: 18px; }
+        .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
+        .tag-grid-small { grid-template-columns: 1fr 1fr; }
     </style>
 </head>
 <body onclick="handleGlobalClick(event)">
@@ -76,6 +78,19 @@
             <div id="targetBookLabel" style="color:var(--green); margin-bottom:10px; font-weight:bold;">選取的項目：<span id="selNumDisp">請選擇</span></div>
             <input type="date" id="bookDate" class="input-dark">
             <div style="display:flex; gap:8px;"><input type="time" id="bookTime" class="input-dark" style="flex:1.5;"><select id="bookDur" class="input-dark" style="flex:1"></select></div>
+            
+            <div class="tag-grid">
+                <button id="bk_des" class="tag-btn" style="font-size:18px;" onclick="toggleBk('des')">指名</button>
+                <button id="bk_extra" class="tag-btn" style="font-size:18px;" onclick="toggleBk('extra')">外</button>
+                <button id="bk_sign" class="tag-btn" style="font-size:18px;" onclick="toggleBk('sign')">簽名</button>
+                <button id="bk_coupon" class="tag-btn" style="font-size:18px;" onclick="toggleBk('coupon')">卷</button>
+                <button id="bk_private" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleBk('private')">企進</button>
+            </div>
+            <div class="tag-grid tag-grid-small">
+                <button id="bk_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOilBk('oilS')">油（師）</button>
+                <button id="bk_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleOilBk('oilB')">油（店）</button>
+            </div>
+            <input type="number" id="bookAmt" class="input-dark" placeholder="輸入預計金額 (例如: 700)">
             <input type="text" id="bookNote" class="input-dark" placeholder="備註 (例如: 指名客)">
             <button class="btn-action" style="background:var(--blue)" onclick="addB()">確認登記預約</button>
             <button id="cancelBookBtn" class="btn-action" style="background:none; color:#888; display:none;" onclick="cancelEditB()">不做變更並關閉</button>
@@ -119,6 +134,20 @@
             <div style="flex:1;"><label style="font-size:14px; color:#888;">起始小時</label><select id="matchStartHr" class="input-dark" style="margin-bottom:0;"></select></div>
             <div style="flex:1;"><label style="font-size:14px; color:#888;">結束小時</label><select id="matchEndHr" class="input-dark" style="margin-bottom:0;"></select></div>
         </div>
+        
+        <div class="tag-grid">
+            <button id="ma_des" class="tag-btn" style="font-size:18px;" onclick="toggleMa('des')">指名</button>
+            <button id="ma_extra" class="tag-btn" style="font-size:18px;" onclick="toggleMa('extra')">外</button>
+            <button id="ma_sign" class="tag-btn" style="font-size:18px;" onclick="toggleMa('sign')">簽名</button>
+            <button id="ma_coupon" class="tag-btn" style="font-size:18px;" onclick="toggleMa('coupon')">卷</button>
+            <button id="ma_private" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleMa('private')">企進</button>
+        </div>
+        <div class="tag-grid tag-grid-small">
+            <button id="ma_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOilMa('oilS')">油（師）</button>
+            <button id="ma_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleOilMa('oilB')">油（店）</button>
+        </div>
+        <input type="number" id="matchAmt" class="input-dark" placeholder="輸入預設金額 (例: 700)" style="margin-bottom:15px;">
+
         <button class="btn-action" style="background:var(--blue)" onclick="runMatch()">開始計算空檔</button>
         <div id="matchResults" style="margin-top:10px;"></div>
         <button class="btn-action" style="background:none; color:#888;" onclick="closeM('matchModal')">關閉</button>
@@ -167,12 +196,14 @@
         const staffIds = [0, 1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101];
         const specialIds = [0, -1, -2]; 
         const getSpecialName = (id) => id === 0 ? '不指定' : (id === -1 ? '指男' : '指女');
-        
         const maleIds = [1, 5, 7, 9, 10, 11, 12, 13];
         const femaleIds = [2, 38, 100, 101];
 
         let selIds=[], isBoss=false, editBookId=null, matchSels=[]; 
         let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
+        let bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
+        let matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
+
         let specialCounts = { "0": 0, "-1": 0, "-2": 0 };
         let tempSpecId = null; 
         let activeHE = { d: null, r: null, l: null, isLive: false };
@@ -253,7 +284,6 @@
             monthLogs.forEach(day => {
                 day.records.forEach(r => {
                     if (!summary[r.id]) summary[r.id] = { total: 0, des: 0 };
-                    // 業績報表應排除企進，以免報表虛高
                     const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
                     const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
                     const filteredDes = filteredLogs.filter(l => l.isD).reduce((sum, l) => sum + l.amt, 0);
@@ -328,7 +358,8 @@
                         if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
                         if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
                         if(l.isPri) tags.push('[企]');
-                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button></div>`;
+                        const timeTag = l.time ? `<span style="color:#888; font-size:14px; margin-left:15px;">${l.time}</span>` : '';
+                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}${timeTag}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button></div>`;
                     }).join('') : '';
 
                     return `
@@ -365,6 +396,7 @@
         }
 
         function toggleH(id) { const el = document.getElementById(id); if(el) el.style.display = el.style.display==='block'?'none':'block'; }
+        
         function openHE(d, r, l, isLive = false) {
             activeHE = { d, r, l, isLive };
             if (isLive) tempHE = JSON.parse(JSON.stringify(staffData.find(s=>s.id===d).logs[l]));
@@ -377,6 +409,7 @@
             });
             document.getElementById('historyEditModal').style.display = 'flex';
         }
+
         function toggleHE(k) {
             if(k==='oilS'){ tempHE.oilS=!tempHE.oilS; if(tempHE.oilS) tempHE.oilB=false; }
             else if(k==='oilB'){ tempHE.oilB=!tempHE.oilB; if(tempHE.oilB) tempHE.oilS=false; }
@@ -387,6 +420,7 @@
                 if(btn) btn.classList.toggle('tag-active', !!tempHE[key]); 
             });
         }
+
         function saveHistoryEdit() {
             tempHE.amt = parseInt(document.getElementById('he_amt').value) || 0;
             const { d, r, l, isLive } = activeHE;
@@ -394,6 +428,7 @@
             else { historyData[d].records[r].fullLogs[l] = tempHE; const logs = historyData[d].records[r].fullLogs; historyData[d].records[r].totalAmt = logs.reduce((s, x) => s + x.amt, 0); historyData[d].records[r].desAmt = logs.filter(x => x.isD).reduce((s, x) => s + x.amt, 0); renderHistoryList(); }
             save(); closeM('historyEditModal'); render(); showT('修正成功');
         }
+
         function deleteHistoryDay(idx) { if (confirm('確定刪除？')) { historyData.splice(idx, 1); save(); renderHistoryList(); } }
 
         function render(){
@@ -405,18 +440,23 @@
             document.getElementById('todayDate').innerText = dateS;
             if(document.getElementById('settleTitle')) document.getElementById('settleTitle').innerText = isBoss ? '店內結帳' : '師傅結帳';
             if(document.getElementById('modeBtn')) document.getElementById('modeBtn').innerText = isBoss ? '切換師傅' : '切換店內';
-            staffData.forEach(s => { s.bookings = s.bookings.filter(b => (new Date(`${b.date}T${b.time}`).getTime() + (b.dur * 60000)) > nowMs); });
             
+            // 步驟1: 先算出當下所有特殊標籤預約應該由誰承接
             const tentativeMap = {}; 
             const spReqs = []; 
             specialIds.forEach(spId => {
                 const s = staffData.find(x => x.id === spId);
                 if (s) s.bookings.forEach(b => spReqs.push({...b, spId}));
             });
-            spReqs.sort((a,b) => a.time.localeCompare(b.time));
+            
+            spReqs.sort((a,b) => {
+                const aPri = (a.spId === -1 || a.spId === -2) ? 1 : 0;
+                const bPri = (b.spId === -1 || b.spId === -2) ? 1 : 0;
+                if (aPri !== bPri) return bPri - aPri; // 優先權高的排前面
+                return a.time.localeCompare(b.time);   // 優先權相同時依時間排序
+            });
 
             const sortedRankCandidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
-                // 排班順序維持原樣：包含企進金額
                 const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                 return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
             });
@@ -451,6 +491,47 @@
                 }
             });
 
+            // 步驟2: 根據剛剛算出來的派單結果，進行預約結算
+            let changed = false;
+            staffData.forEach(s => {
+                s.bookings = s.bookings.filter(b => {
+                    const sMs = new Date(`${b.date}T${b.time}`).getTime();
+                    const eMs = sMs + (b.dur * 60000);
+                    if (nowMs > eMs) {
+                        if (b.amt > 0) {
+                            let logData = {
+                                amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC,
+                                isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri,
+                                time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}`
+                            };
+                            
+                            // 如果是特殊暫定單（不指定等），找出當時是指派給哪位真實師傅
+                            if (s.id <= 0) {
+                                let assignedSid = null;
+                                for (let sid in tentDetailsForStaff) {
+                                    if (tentDetailsForStaff[sid].some(req => req.id === b.id)) {
+                                        assignedSid = parseInt(sid);
+                                        break;
+                                    }
+                                }
+                                if (assignedSid) {
+                                    const targetStaff = staffData.find(x => x.id === assignedSid);
+                                    if (targetStaff) targetStaff.logs.push(logData);
+                                } else {
+                                    s.logs.push(logData); // 防呆機制
+                                }
+                            } else {
+                                s.logs.push(logData);
+                            }
+                            changed = true;
+                        }
+                        return false;
+                    }
+                    return true;
+                });
+            });
+            if(changed) save();
+
             const rA = document.getElementById('rankArea'); rA.innerHTML = '';
             const rankedStaff = staffData.filter(s=>s.inRank && s.id > 0).sort((a,b)=>{ 
                 const aOngoing = a.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
@@ -460,7 +541,6 @@
                 const aBusy = aOngoing || aTentActive;
                 const bBusy = bOngoing || bTentActive;
                 if (aBusy && !bBusy) return 1; if (!aBusy && bBusy) return -1;
-                // 排班判斷：全業績
                 const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                 return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
             }).slice(0, 12); 
@@ -520,6 +600,7 @@
         }
 
         function openPerson(id) { tempSpecId = id; document.getElementById('personTitle').innerText = `選擇「${getSpecialName(id)}」人數`; document.getElementById('personModal').style.display = 'flex'; }
+        
         function setPersonCount(count) { 
             specialCounts[tempSpecId] = count; 
             closeM('personModal'); 
@@ -535,6 +616,7 @@
             } 
             render(); 
         }
+
         function tBookSel(id) { const idx = selIds.indexOf(id); if(idx > -1) selIds.splice(idx, 1); else selIds.push(id); render(); }
 
         function updateSettleAndList() {
@@ -542,9 +624,7 @@
             document.getElementById('settleBody').innerHTML = staffData.filter(s=>s.logs.length>0).map(s=>{
                 let sSum=0, bSum=0, tAmt=0;
                 s.logs.forEach(l=>{
-                    // 如果標記為企進，不列入結帳計算
                     if(l.isPri) return;
-
                     tAmt += l.amt; let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0;
                     let sP = Math.round(l.amt * 0.7), bP = l.amt - sP;
                     if(l.oilS) sSum += (sP + oil); else sSum += sP;
@@ -557,7 +637,7 @@
             document.getElementById('settleGrandTotal').innerHTML = `<div style="padding:20px;background:#2c2c2e;border-radius:15px;margin-top:15px;border:1.5px solid var(--purple);"><span>總計：$${gTotal} / 結算：$${gSettle}</span></div>`;
             const allB = []; staffData.forEach(s => s.bookings.forEach(b => allB.push({...b, sid:s.id})));
             allB.sort((a,b)=> (new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
-            document.getElementById('fullBookList').innerHTML = allB.map(b => `<div style="background:#222;padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span>${b.date} <b>${b.time}</b> | ${b.sid > 0 ? b.sid+'號' : getSpecialName(b.sid)} (${b.dur}分)</span><div><button onclick="editB(${b.sid},${b.id})" class="btn-edit">改</button><button onclick="delB(${b.sid},${b.id})" class="btn-del">刪</button></div></div>`).join('');
+            document.getElementById('fullBookList').innerHTML = allB.map(b => `<div style="background:#222;padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span>${b.date} <b>${b.time}</b> | ${b.sid > 0 ? b.sid+'號' : getSpecialName(b.sid)} (${b.dur}分)${b.amt > 0 ? ' [有設金額]' : ''}</span><div><button onclick="editB(${b.sid},${b.id})" class="btn-edit">改</button><button onclick="delB(${b.sid},${b.id})" class="btn-del">刪</button></div></div>`).join('');
         }
 
         function showL(id){
@@ -568,7 +648,8 @@
                 if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
                 if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
                 if(l.isPri) tags.push('[企]');
-                return `<div style="padding:15px 10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;flex-direction:column;"><span style="font-size:24px;font-weight:bold;color:${l.isPri?'var(--purple)':'var(--green)'};">$${l.amt}</span><span style="font-size:16px;color:var(--orange);">${tags.join(' ')}</span></div><div><button onclick="openHE(${id},0,${i},true)" class="btn-edit" style="margin-right:5px;">改</button><button onclick="delL(${id},${i})" class="btn-del">刪</button></div></div>`;
+                const timeStr = l.time ? `<span style="font-size:16px;color:#888;margin-left:15px;">${l.time}</span>` : '';
+                return `<div style="padding:15px 10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;flex-direction:column;"><span style="font-size:24px;font-weight:bold;color:${l.isPri?'var(--purple)':'var(--green)'};">$${l.amt}${timeStr}</span><span style="font-size:16px;color:var(--orange);">${tags.join(' ')}</span></div><div><button onclick="openHE(${id},0,${i},true)" class="btn-edit" style="margin-right:5px;">改</button><button onclick="delL(${id},${i})" class="btn-del">刪</button></div></div>`;
             }).join('');
             document.getElementById('logModal').style.display='flex';
         }
@@ -622,6 +703,9 @@
 
         function addB(fT = null, fD = null, mIds = null){
             const d=document.getElementById('bookDate').value, t=fT || document.getElementById('bookTime').value, du=fD || parseInt(document.getElementById('bookDur').value), nt=document.getElementById('bookNote').value;
+            const activeMode = fT ? matchMode : bookMode;
+            const activeAmt = fT ? (parseInt(document.getElementById('matchAmt').value) || 0) : (parseInt(document.getElementById('bookAmt').value) || 0);
+
             const aS = specialIds.filter(id => specialCounts[id] > 0); let tIds = mIds ? mIds : selIds;
             if(tIds.length===0 && aS.length===0) return alert('請選取號碼或人數'); if(!t) return alert('請填寫時間');
             const start = new Date(`${d}T${t}`).getTime(), end = start + (du * 60000);
@@ -631,20 +715,30 @@
             }
 
             if(editBookId !== null) staffData.forEach(s => { s.bookings = s.bookings.filter(b => b.id !== editBookId); });
-            tIds.forEach(sid => { const s = staffData.find(x=>x.id===sid); s.bookings.push({id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt}); });
-            aS.forEach(sid => { for(let i=0; i<specialCounts[sid]; i++) staffData.find(x=>x.id===sid).bookings.push({id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt}); });
+            
+            const bData = {
+                id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt,
+                amt: activeAmt, isD: activeMode.des, isP: activeMode.sign, isC: activeMode.coupon,
+                isExtra: activeMode.extra, oilS: activeMode.oilS, oilB: activeMode.oilB, isPri: activeMode.private
+            };
+
+            tIds.forEach(sid => { const s = staffData.find(x=>x.id===sid); s.bookings.push({...bData, id:Date.now() + Math.random()}); });
+            aS.forEach(sid => { for(let i=0; i<specialCounts[sid]; i++) staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
             
             editBookId = null; 
             document.getElementById('cancelBookBtn').style.display='none'; 
             document.getElementById('bookNote').value = ''; 
+            document.getElementById('bookAmt').value = '';
             selIds = []; 
             specialCounts = { "0": 0, "-1": 0, "-2": 0 };
+            resetBookMode();
             save(); render(); showT(fT ? '匹配預約成功' : '預約成功');
         }
 
         function openMatch(){
             matchSels = []; 
             specialCounts = { "0": 0, "-1": 0, "-2": 0 };
+            resetMatchMode();
             document.getElementById('matchStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div id="m-${s.id}" class="match-btn-item" onclick="tMatch(${s.id}, false)">${s.id}</div>`).join('');
             document.getElementById('matchSpecialGrid').innerHTML = specialIds.map(id => `<div id="m-${id}" class="match-btn-item" onclick="tMatch(${id}, true)">${getSpecialName(id)}</div>`).join('');
             const mDur = document.getElementById('matchDur'); mDur.innerHTML = ''; for(let i=15; i<=180; i+=15) mDur.innerHTML+=`<option value="${i}">${i} 分鐘</option>`; mDur.value = 60;
@@ -687,15 +781,30 @@
         function editB(sid, bid){
             const s = staffData.find(x=>x.id===sid); const b = s.bookings.find(x=>x.id===bid); if(!b) return;
             editBookId = bid; selIds = [sid]; document.getElementById('bookDate').value = b.date; document.getElementById('bookTime').value = b.time; document.getElementById('bookDur').value = b.dur; document.getElementById('bookNote').value = b.note || '';
+            document.getElementById('bookAmt').value = b.amt || '';
+            bookMode = {des:!!b.isD, extra:!!b.isExtra, sign:!!b.isP, coupon:!!b.isC, oilS:!!b.oilS, oilB:!!b.oilB, private:!!b.isPri};
+            updateBookTags();
             document.getElementById('cancelBookBtn').style.display = 'block'; showPage('page-book');
         }
-        function cancelEditB(){ editBookId = null; document.getElementById('cancelBookBtn').style.display = 'none'; document.getElementById('bookNote').value = ''; showPage('page-list'); }
+
+        function cancelEditB(){ editBookId = null; document.getElementById('cancelBookBtn').style.display = 'none'; document.getElementById('bookNote').value = ''; document.getElementById('bookAmt').value = ''; resetBookMode(); showPage('page-list'); }
         
         function showPage(p){ 
             if(p !== 'page-book') { selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; }
             document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active', x.id===p)); 
             render(); 
         }
+
+        function toggleBk(t){ bookMode[t]=!bookMode[t]; updateBookTags(); }
+        function toggleOilBk(t) { if(t==='oilS'){bookMode.oilS=!bookMode.oilS; if(bookMode.oilS)bookMode.oilB=false;} else{bookMode.oilB=!bookMode.oilB; if(bookMode.oilS)bookMode.oilS=false;} updateBookTags(); }
+        function resetBookMode() { bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; updateBookTags(); }
+        function updateBookTags() { ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('bk_'+k).style.borderColor=bookMode[k]?'#fff':'transparent'); }
+
+        function toggleMa(t){ matchMode[t]=!matchMode[t]; updateMatchTags(); }
+        function toggleOilMa(t) { if(t==='oilS'){matchMode.oilS=!matchMode.oilS; if(matchMode.oilS)matchMode.oilB=false;} else{matchMode.oilB=!matchMode.oilB; if(matchMode.oilB)matchMode.oilS=false;} updateMatchTags(); }
+        function resetMatchMode() { matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; updateMatchTags(); document.getElementById('matchAmt').value=''; }
+        function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('ma_'+k).style.borderColor=matchMode[k]?'#fff':'transparent'); }
+
         function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
         function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
         function resetModes() { 
@@ -703,13 +812,17 @@
             ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('m_'+k).style.borderColor='transparent'); 
             document.getElementById('customAmt').value = ''; 
         }
+
         function hAmt(a){ 
             const amt = parseInt(a);
             if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
+            const now = getTW();
+            const timeTag = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
             const s = staffData.find(x=>x.id===selIds[0]); 
-            s.logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private}); 
+            s.logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, time: timeTag}); 
             closeM('amtModal'); save(); render(); 
         }
+
         function tRank(id){ let s=staffData.find(x=>x.id===id); s.inRank=!s.inRank; s.joinTime=Date.now(); save(); render(); }
         function delB(sid,bid){ if(confirm('刪除？')){ const s=staffData.find(x=>x.id===sid); s.bookings=s.bookings.filter(b=>b.id!==bid); save(); render(); } }
         function delL(sid,i){ staffData.find(x=>x.id===sid).logs.splice(i,1); save(); render(); closeM('logModal'); }
