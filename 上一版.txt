@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>排班與業績管理系統-擴充版</title>
+    <title>排班與業績管理系統</title>
     <style>
         :root { --blue: #007AFF; --red: #ff3b30; --green: #30d158; --bg: #000; --card: #1c1c1e; --purple: #af52de; --orange: #ff9500; --yellow: #ffcc00; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; user-select: none; font-size: 20px; font-weight: 300; }
@@ -16,13 +16,13 @@
         .page.active { display: block; }
         .rank-item { position: absolute; width: 100%; background: var(--card); padding: 15px 20px; border-radius: 25px; border-left: 10px solid #444; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; transition: 0.4s; min-height: 45px; cursor: pointer; }
         .staff-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .staff-btn { background: #2c2c2e; padding: 15px 0; border-radius: 12px; border: 1px solid #444; text-align: center; color: #fff; font-size: 24px; cursor: pointer; position: relative; overflow: hidden; }
+        .staff-btn { background: #2c2c2e; padding: 15px 0; border-radius: 12px; border: 1px solid #444; text-align: center; color: #fff; font-size: 24px; cursor: pointer; }
         .staff-btn-sm { padding: 10px 0; font-size: 18px; border-radius: 10px; }
         .staff-btn.active { background: var(--blue); border-color: #fff; }
         .btn-action { padding: 20px 0; border-radius: 15px; border: none; color: #fff; width: 100%; font-size: 22px; margin-bottom: 10px; cursor: pointer; }
         .input-dark { background:#222; color:#fff; border:1px solid #444; padding:15px 8px; border-radius:10px; width: 100%; box-sizing: border-box; margin-bottom: 12px; font-size: 22px; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
-        #personModal, #historyEditModal, #genderModal { z-index: 4000; }
+        #personModal, #historyEditModal { z-index: 4000; }
         #matchModal { z-index: 3000; }
         .modal-content { background: #1c1c1e; width: 95%; max-width: 600px; padding: 20px; border-radius: 25px; max-height: 90vh; overflow-y: auto; }
         .b-text { color: var(--orange); font-size: 18px; display: block; line-height: 1.2; }
@@ -49,9 +49,6 @@
         .report-select { flex: 1; background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 10px; font-size: 18px; }
         .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
         .tag-grid-small { grid-template-columns: 1fr 1fr; }
-        .edit-hint { font-size: 12px; color: #666; display: block; margin-top: 5px; text-align: center; }
-        .gender-male { color: #5ac8fa; font-size: 14px; margin-left: 4px; }
-        .gender-female { color: #ff2d55; font-size: 14px; margin-left: 4px; }
     </style>
 </head>
 <body onclick="handleGlobalClick(event)">
@@ -69,11 +66,7 @@
     </div>
 
     <div id="page-staff" class="page">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3>👤 師傅排班</h3>
-            <span style="color:#888; font-size:14px;">點擊兩次可修改名稱與性別</span>
-        </div>
-        <div id="staffGridOn" class="staff-grid"></div>
+        <h3>👤 師傅排班</h3><div id="staffGridOn" class="staff-grid"></div>
         <button class="btn-action" style="background:#444;" onclick="clearRank()">🧹 清空看板</button>
     </div>
 
@@ -133,8 +126,6 @@
 
     <div id="personModal" class="modal"><div class="modal-content"><h3 id="personTitle" style="text-align:center;">選擇人數</h3><div class="staff-grid" style="grid-template-columns: repeat(2, 1fr);"><button class="btn-action" style="background:#333" onclick="setPersonCount(1)">1 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(2)">2 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(3)">3 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(4)">4 位</button></div><button class="btn-action" style="background:var(--red); margin-top:10px;" onclick="setPersonCount(0)">取消選擇</button></div></div>
     
-    <div id="genderModal" class="modal"><div class="modal-content"><h3 id="genderTitle" style="text-align:center;">設定性別</h3><div class="staff-grid" style="grid-template-columns: 1fr 1fr;"><button class="btn-action" style="background:#333; color:#5ac8fa;" onclick="setStaffGender('male')">男師傅</button><button class="btn-action" style="background:#333; color:#ff2d55;" onclick="setStaffGender('female')">女師傅</button></div><button class="btn-action" style="background:none; border: 1px solid #444; margin-top:10px;" onclick="closeM('genderModal')">不變更</button></div></div>
-
     <div id="matchModal" class="modal"><div class="modal-content">
         <h3 style="margin-top:0;">🔍 多人匹配找空檔</h3>
         <div id="matchStaffGrid" class="staff-grid"></div>
@@ -204,18 +195,31 @@
         <button class="btn-action" style="background:#333; margin-top:20px;" onclick="closeM('reportModal')">關閉報表</button>
     </div></div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA6brkw62LOPXdG6VVANPXA2ZRaM9nt66g",
+            authDomain: "auto-accounting-55f62.firebaseapp.com",
+            databaseURL: "https://auto-accounting-55f62-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "auto-accounting-55f62",
+            storageBucket: "auto-accounting-55f62.firebasestorage.app",
+            messagingSenderId: "409481971569",
+            appId: "1:409481971569:web:e89046546627eef5d7d8d0",
+            measurementId: "G-FW1P36W7KK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+    </script>
+
     <script>
-        const baseStaffIds = [0, 1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101];
-        const extraNames = ["A", "B", "C", "D", "E", "F", "G"];
-        const extendedIds = [1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101, 901, 902, 903, 904, 905, 906, 907];
-        const staffIds = extendedIds;
-        
+        const staffIds = [0, 1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101];
         const specialIds = [0, -1, -2]; 
         const getSpecialName = (id) => id === 0 ? '不指定' : (id === -1 ? '指男' : '指女');
-        
-        // 性別設定動態化
-        const defaultMale = [1, 5, 7, 9, 10, 11, 12, 13, 901, 902, 903];
-        const defaultFemale = [2, 38, 100, 101, 904, 905, 906, 907];
+        const maleIds = [1, 5, 7, 9, 10, 11, 12, 13];
+        const femaleIds = [2, 38, 100, 101];
 
         let selIds=[], isBoss=false, editBookId=null, matchSels=[]; 
         let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
@@ -226,35 +230,11 @@
         let tempSpecId = null; 
         let activeHE = { d: null, r: null, l: null, isLive: false };
         let tempHE = {};
-        let renamingStaffId = null;
-
-        // 師傅名稱與性別對照表
-        let staffNames = JSON.parse(localStorage.getItem('massageStaffNames')) || {};
-        // 初始化預設名稱與性別
-        staffIds.forEach((id, index) => {
-            if(!staffNames[id]) {
-                let name = index < 12 ? id.toString() : extraNames[index - 12];
-                let gender = defaultMale.includes(id) ? 'male' : 'female';
-                staffNames[id] = { name: name, gender: gender };
-            } else if (typeof staffNames[id] === 'string') {
-                // 轉移舊版資料
-                let oldName = staffNames[id];
-                let gender = defaultMale.includes(id) ? 'male' : 'female';
-                staffNames[id] = { name: oldName, gender: gender };
-            }
-        });
-
-        const getStaffDisplayName = (id) => staffNames[id] ? staffNames[id].name : id.toString();
-        const getStaffGender = (id) => staffNames[id] ? staffNames[id].gender : 'male';
-        
-        // 取得即時的男女 ID 列表供匹配系統使用
-        const getMaleIds = () => staffIds.filter(id => getStaffGender(id) === 'male');
-        const getFemaleIds = () => staffIds.filter(id => getStaffGender(id) === 'female');
 
         let staffData = JSON.parse(localStorage.getItem('massageData')) || [];
         let historyData = JSON.parse(localStorage.getItem('massageHistory')) || [];
 
-        const allPossibleIds = [...staffIds, 0, -1, -2];
+        const allPossibleIds = [...staffIds, -1, -2];
         staffData = allPossibleIds.map(id => staffData.find(s=>s.id===id) || {id, inRank:false, joinTime:0, bookings:[], logs:[]});
 
         const getTW = () => {
@@ -265,11 +245,7 @@
             return new Date(`${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}:${map.second}`);
         };
 
-        const save = () => { 
-            localStorage.setItem('massageData', JSON.stringify(staffData)); 
-            localStorage.setItem('massageHistory', JSON.stringify(historyData)); 
-            localStorage.setItem('massageStaffNames', JSON.stringify(staffNames));
-        };
+        const save = () => { localStorage.setItem('massageData', JSON.stringify(staffData)); localStorage.setItem('massageHistory', JSON.stringify(historyData)); };
         
         function handleGlobalClick(e) {
             if (e.target.classList.contains('modal')) {
@@ -277,7 +253,6 @@
                 if (modalId === 'personModal') setPersonCount(0);
                 else if (modalId === 'historyEditModal') closeM('historyEditModal');
                 else if (modalId === 'amtModal') closeM('amtModal');
-                else if (modalId === 'genderModal') closeM('genderModal');
                 else closeM(modalId);
             }
         }
@@ -351,7 +326,7 @@
             let grandTotal = 0;
             sortedIds.forEach(id => {
                 const data = summary[id];
-                const name = id > 0 ? getStaffDisplayName(id) : getSpecialName(Number(id));
+                const name = id > 0 ? id + ' 號' : getSpecialName(Number(id));
                 const desRate = data.total > 0 ? Math.round((data.des / data.total) * 100) : 0;
                 const units = data.total > 0 ? (data.total / 700).toFixed(1) : 0;
                 grandTotal += data.total;
@@ -380,13 +355,13 @@
 
             let html = filteredHistory.map((day) => {
                 const dayIndex = day.originalIndex;
-                let dayPersons = 0, dayTotalAmt = 0, dayDes = 0, dayCash = 0, daySign = 0, dayCoupon = 0;
+                let dayPersons = 0, dayTotalAmt = 0, dayDes = 0, daySign = 0, dayCoupon = 0, dayCash = 0;
                 let tableRows = day.records.map((r, rIdx) => {
                     const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
                     const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
                     const filteredDes = filteredLogs.filter(l => l.isD).reduce((sum, l) => sum + l.amt, 0);
                     
-                    const name = r.id > 0 ? getStaffDisplayName(r.id) : getSpecialName(r.id);
+                    const name = r.id > 0 ? r.id + ' 號' : getSpecialName(r.id);
                     const desRate = filteredTotal > 0 ? Math.round((filteredDes / filteredTotal) * 100) : 0;
                     const units = filteredTotal > 0 ? (filteredTotal / 700).toFixed(1) : 0;
                     const uid = `h-${dayIndex}-${rIdx}`;
@@ -515,8 +490,8 @@
                 const targetSid = sortedRankCandidates.find(s => {
                     if (!tentDetailsForStaff[s.id]) tentDetailsForStaff[s.id] = [];
                     const staffTentative = tentDetailsForStaff[s.id];
-                    if (req.spId === -1 && getStaffGender(s.id) !== 'male') return false;
-                    if (req.spId === -2 && getStaffGender(s.id) !== 'female') return false;
+                    if (req.spId === -1 && !maleIds.includes(s.id)) return false;
+                    if (req.spId === -2 && !femaleIds.includes(s.id)) return false;
                     const hasConflictWithBooking = s.bookings.some(b => {
                         const bS = new Date(`${b.date}T${b.time}`).getTime();
                         const bE = bS + (b.dur * 60000);
@@ -587,10 +562,9 @@
                 if (aBusy && !bBusy) return 1; if (!aBusy && bBusy) return -1;
                 const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                 return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
-            }).slice(0, 20);
+            }).slice(0, 12); 
 
-            const count = rankedStaff.length; 
-            const itemHeight = count <= 6 ? 100 : Math.max(60, 520 / count);
+            const count = rankedStaff.length; const itemHeight = count <= 4 ? 120 : Math.max(65, 520 / count);
             rankedStaff.forEach((s,i)=>{
                 const allUpcoming = [];
                 s.bookings.forEach(b => {
@@ -627,62 +601,21 @@
                     });
                 }
 
-                const div = document.createElement('div'); div.className='rank-item'; div.style.top=(i*itemHeight)+'px'; div.style.height = (itemHeight - 5) + 'px'; 
+                const div = document.createElement('div'); div.className='rank-item'; div.style.top=(i*itemHeight)+'px'; div.style.height = (itemHeight - 8) + 'px'; 
                 const hasBusy = nextTwo.some(item => nowMs >= item.sMs && nowMs <= item.eMs);
                 const hasTentative = nextTwo.some(item => item.type === 'tentative' && nowMs < item.sMs);
                 div.style.borderColor = hasBusy ? 'var(--red)' : (hasTentative ? 'var(--yellow)' : 'var(--green)');
-                div.onclick=()=>{ selIds=[s.id]; document.getElementById('actTitle').innerText=getStaffDisplayName(s.id); resetModes(); document.getElementById('actModal').style.display='flex'; };
-                
-                const gMarker = getStaffGender(s.id) === 'male' ? '<span class="gender-male">♂</span>' : '<span class="gender-female">♀</span>';
-                div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:28px;margin-right:15px;font-weight:bold;width:60px;overflow:hidden;">${getStaffDisplayName(s.id)}${gMarker}</span><div style="display:flex; flex-direction:column; gap:1px;">${displayHtml}</div></div><b style="font-size:26px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
+                div.onclick=()=>{ selIds=[s.id]; document.getElementById('actTitle').innerText=s.id+'號'; resetModes(); document.getElementById('actModal').style.display='flex'; };
+                div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:38px;margin-right:15px;font-weight:bold;">${s.id}</span><div style="display:flex; flex-direction:column; gap:2px;">${displayHtml}</div></div><b style="font-size:32px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
                 rA.appendChild(div);
             });
 
-            document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=> {
-                const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀';
-                return `<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${getStaffDisplayName(s.id)}<span style="font-size:12px; opacity:0.6; display:block;">${gMarker}</span></div>`;
-            }).join('');
+            document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${s.id}</div>`).join('');
             document.getElementById('bookStaffSpecial').innerHTML = specialIds.map(id => { const c = specialCounts[id]; return `<div class="staff-btn staff-btn-sm ${c > 0 ? 'active' : ''}" style="position:relative;" onclick="openPerson(${id})">${getSpecialName(id)}${c > 0 ? `<div class="count-badge">${c}</div>` : ''}</div>`; }).join('');
-            
-            let selText = []; 
-            selIds.forEach(id => selText.push(getStaffDisplayName(id))); 
-            specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
+            let selText = []; selIds.forEach(id => selText.push(id + '號')); specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
             document.getElementById('selNumDisp').innerText = selText.length > 0 ? selText.join(', ') : '請選擇';
-            
-            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>{
-                const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀';
-                const gClass = getStaffGender(s.id) === 'male' ? 'gender-male' : 'gender-female';
-                return `
-                <div class="staff-btn ${s.inRank?'active':''}" 
-                     onclick="tRank(${s.id})" 
-                     ondblclick="renameStaff(${s.id})">
-                     ${getStaffDisplayName(s.id)}<span class="${gClass}" style="display:block; font-size:16px;">${gMarker}</span>
-                </div>`
-            }).join('');
-            
+            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div class="staff-btn ${s.inRank?'active':''}" onclick="tRank(${s.id})">${s.id}</div>`).join('');
             updateSettleAndList();
-        }
-
-        function renameStaff(id) {
-            const oldName = getStaffDisplayName(id);
-            const newName = prompt(`修改 ${oldName} 的顯示名稱：`, oldName);
-            if(newName !== null && newName.trim() !== "") {
-                renamingStaffId = id;
-                staffNames[id].name = newName.trim();
-                // 顯示性別選擇 Modal
-                document.getElementById('genderTitle').innerText = `設定 ${newName.trim()} 的性別`;
-                document.getElementById('genderModal').style.display = 'flex';
-            }
-        }
-
-        function setStaffGender(gender) {
-            if(renamingStaffId && staffNames[renamingStaffId]) {
-                staffNames[renamingStaffId].gender = gender;
-                save();
-                closeM('genderModal');
-                renamingStaffId = null;
-                showT('資料已更新');
-            }
         }
 
         function openPerson(id) { tempSpecId = id; document.getElementById('personTitle').innerText = `選擇「${getSpecialName(id)}」人數`; document.getElementById('personModal').style.display = 'flex'; }
@@ -718,17 +651,17 @@
                     if(l.isP || l.isC) bSum -= l.amt; 
                 });
                 const curS = isBoss ? bSum : sSum; gTotal += tAmt; gSettle += curS;
-                return `<div onclick="showL(${s.id})" style="background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span>${s.id > 0 ? getStaffDisplayName(s.id) : getSpecialName(s.id)}</span><span style="color:var(--green);font-weight:bold;">總計 ${tAmt} 結算 ${curS}</span></div>`;
+                return `<div onclick="showL(${s.id})" style="background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span>${s.id > 0 ? s.id+' 號' : getSpecialName(s.id)}</span><span style="color:var(--green);font-weight:bold;">總計 ${tAmt} 結算 ${curS}</span></div>`;
             }).join('');
             document.getElementById('settleGrandTotal').innerHTML = `<div style="padding:20px;background:#2c2c2e;border-radius:15px;margin-top:15px;border:1.5px solid var(--purple);"><span>總計：$${gTotal} / 結算：$${gSettle}</span></div>`;
             const allB = []; staffData.forEach(s => s.bookings.forEach(b => allB.push({...b, sid:s.id})));
             allB.sort((a,b)=> (new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
-            document.getElementById('fullBookList').innerHTML = allB.map(b => `<div style="background:#222;padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span>${b.date} <b>${b.time}</b> | ${b.sid > 0 ? getStaffDisplayName(b.sid) : getSpecialName(b.sid)} (${b.dur}分)${b.amt > 0 ? ' [有設金額]' : ''}</span><div><button onclick="editB(${b.sid},${b.id})" class="btn-edit">改</button><button onclick="delB(${b.sid},${b.id})" class="btn-del">刪</button></div></div>`).join('');
+            document.getElementById('fullBookList').innerHTML = allB.map(b => `<div style="background:#222;padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span>${b.date} <b>${b.time}</b> | ${b.sid > 0 ? b.sid+'號' : getSpecialName(b.sid)} (${b.dur}分)${b.amt > 0 ? ' [有設金額]' : ''}</span><div><button onclick="editB(${b.sid},${b.id})" class="btn-edit">改</button><button onclick="delB(${b.sid},${b.id})" class="btn-del">刪</button></div></div>`).join('');
         }
 
         function showL(id){
             selIds=[id]; const s=staffData.find(x=>x.id===id); 
-            document.getElementById('logTitle').innerText = (id > 0 ? getStaffDisplayName(id) : getSpecialName(id))+'今日明細';
+            document.getElementById('logTitle').innerText = (id > 0 ? id+'號' : getSpecialName(id))+'今日明細';
             document.getElementById('logList').innerHTML = s.logs.map((l,i)=>{
                 let tags = []; 
                 if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
@@ -778,11 +711,8 @@
                 availablePool.splice(idx, 1); 
             }
 
-            let currentMaleIds = getMaleIds();
-            let currentFemaleIds = getFemaleIds();
-            
-            let availableMales = availablePool.filter(s => currentMaleIds.includes(s.id)).length;
-            let availableFemales = availablePool.filter(s => currentFemaleIds.includes(s.id)).length;
+            let availableMales = availablePool.filter(s => maleIds.includes(s.id)).length;
+            let availableFemales = availablePool.filter(s => femaleIds.includes(s.id)).length;
             if (availableMales < reqMale) return false;
             if (availableFemales < reqFemale) return false;
             let remaining = availablePool.length - reqMale - reqFemale;
@@ -828,7 +758,7 @@
             matchSels = []; 
             specialCounts = { "0": 0, "-1": 0, "-2": 0 };
             resetMatchMode();
-            document.getElementById('matchStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div id="m-${s.id}" class="match-btn-item" onclick="tMatch(${s.id}, false)">${getStaffDisplayName(s.id)}</div>`).join('');
+            document.getElementById('matchStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div id="m-${s.id}" class="match-btn-item" onclick="tMatch(${s.id}, false)">${s.id}</div>`).join('');
             document.getElementById('matchSpecialGrid').innerHTML = specialIds.map(id => `<div id="m-${id}" class="match-btn-item" onclick="tMatch(${id}, true)">${getSpecialName(id)}</div>`).join('');
             const mDur = document.getElementById('matchDur'); mDur.innerHTML = ''; for(let i=15; i<=180; i+=15) mDur.innerHTML+=`<option value="${i}">${i} 分鐘</option>`; mDur.value = 60;
             const sHr = document.getElementById('matchStartHr'), eHr = document.getElementById('matchEndHr');
@@ -895,10 +825,7 @@
         function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('ma_'+k).style.borderColor=matchMode[k]?'#fff':'transparent'); }
 
         function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
-        
-        // 修正了這裡的邏輯：點擊油(店)時，應該將油(師)設為false
-        function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
-        
+        function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilB=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
         function resetModes() { 
             mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; 
             ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('m_'+k).style.borderColor='transparent'); 
