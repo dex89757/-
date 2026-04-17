@@ -502,27 +502,41 @@
                 return a.time.localeCompare(b.time);   
             });
 
-            const sortedRankCandidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
-                const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
-                return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
-            });
-
             const tentDetailsForStaff = {}; 
 
             spReqs.forEach(req => {
                 const reqStart = new Date(`${req.date}T${req.time}`).getTime();
                 const reqEnd = reqStart + (req.dur * 60000);
-                const targetSid = sortedRankCandidates.find(s => {
-                    if (!tentDetailsForStaff[s.id]) tentDetailsForStaff[s.id] = [];
-                    const staffTentative = tentDetailsForStaff[s.id];
+                
+                // 動態排序候選人，當下正在工作的人排在後方，讓未來的暫定預約優先落入閒置者的身上
+                const candidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
+                    const aOngoing = a.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
+                    const aTentActive = tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); });
+                    const aBusy = aOngoing || aTentActive;
+
+                    const bOngoing = b.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
+                    const bTentActive = tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); });
+                    const bBusy = bOngoing || bTentActive;
+
+                    if (aBusy && !bBusy) return 1; 
+                    if (!aBusy && bBusy) return -1; 
+
+                    const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
+                    return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
+                });
+
+                const targetSid = candidates.find(s => {
                     if (req.spId === -1 && getStaffGender(s.id) !== 'male') return false;
                     if (req.spId === -2 && getStaffGender(s.id) !== 'female') return false;
+                    
                     const hasConflictWithBooking = s.bookings.some(b => {
                         const bS = new Date(`${b.date}T${b.time}`).getTime();
                         const bE = bS + (b.dur * 60000);
                         return (reqStart < bE && reqEnd > bS);
                     });
                     if (hasConflictWithBooking) return false;
+                    
+                    const staffTentative = tentDetailsForStaff[s.id] || [];
                     const hasConflictWithTentative = staffTentative.some(t => {
                         const tS = new Date(`${t.date}T${t.time}`).getTime();
                         const tE = tS + (t.dur * 60000);
@@ -530,6 +544,7 @@
                     });
                     return !hasConflictWithTentative;
                 });
+
                 if (targetSid) {
                     if (!tentDetailsForStaff[targetSid.id]) tentDetailsForStaff[targetSid.id] = [];
                     tentDetailsForStaff[targetSid.id].push(req);
@@ -577,11 +592,12 @@
             if(changed) save();
 
             const rA = document.getElementById('rankArea'); rA.innerHTML = '';
+            // 看板上的排序同樣採用與分配邏輯相同的嚴謹時間區間判定
             const rankedStaff = staffData.filter(s=>s.inRank && s.id > 0).sort((a,b)=>{ 
                 const aOngoing = a.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
                 const bOngoing = b.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
-                const aTentActive = tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => nowMs >= new Date(`${t.date}T${t.time}`).getTime());
-                const bTentActive = tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => nowMs >= new Date(`${t.date}T${t.time}`).getTime());
+                const aTentActive = tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); });
+                const bTentActive = tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); });
                 const aBusy = aOngoing || aTentActive;
                 const bBusy = bOngoing || bTentActive;
                 if (aBusy && !bBusy) return 1; if (!aBusy && bBusy) return -1;
@@ -896,7 +912,6 @@
 
         function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
         
-        // 修正了這裡的邏輯：點擊油(店)時，應該將油(師)設為false
         function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
         
         function resetModes() { 
