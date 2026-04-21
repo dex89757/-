@@ -48,7 +48,7 @@
         .report-select-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .report-select { flex: 1; background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 10px; font-size: 18px; }
         .tag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-        .tag-grid-small { grid-template-columns: 1fr 1fr; }
+        .tag-grid-small { grid-template-columns: 1fr 1fr 1.3fr; }
         .edit-hint { font-size: 12px; color: #666; display: block; margin-top: 5px; text-align: center; }
         .gender-male { color: #5ac8fa; font-size: 14px; margin-left: 4px; }
         .gender-female { color: #ff2d55; font-size: 14px; margin-left: 4px; }
@@ -99,6 +99,10 @@
             <div class="tag-grid tag-grid-small">
                 <button id="bk_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOilBk('oilS')">油（師）</button>
                 <button id="bk_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleOilBk('oilB')">油（店）</button>
+                <div style="display:flex; gap:2px;">
+                    <button id="bk_otherC" class="tag-btn" style="flex:1; font-size:16px; border-radius:10px 0 0 10px;" onclick="toggleBk('otherC')">其它(<span class="other-rate-disp"></span>%)</button>
+                    <button class="tag-btn" style="width:40px; font-size:18px; border-radius:0 10px 10px 0; background:#444;" onclick="editOtherRate()">⚙️</button>
+                </div>
             </div>
             <input type="number" id="bookAmt" class="input-dark" placeholder="輸入預計金額 (例如: 700)">
             <input type="text" id="bookNote" class="input-dark" placeholder="備註 (例如: 指名客)">
@@ -120,6 +124,7 @@
             <button class="btn-action" style="background:var(--blue); margin-bottom: 0;" onclick="saveToHistory()">💾 儲存今日帳目</button>
             <button class="btn-action" style="background:var(--orange); margin-bottom: 0;" onclick="openReport()">📊 總業績報表</button>
         </div>
+        <button class="btn-action" style="background:#444; margin-top: 10px;" onclick="copySettleText()">📋 複製結帳文字</button>
         <div style="margin-top: 40px;"><button onclick="clearAllLogs()" style="background:none; border: 1px solid #444; padding:12px 20px; border-radius:12px; color:#888; font-size: 16px; cursor:pointer;">🧹 清空所有帳目</button></div>
     </div>
 
@@ -157,6 +162,10 @@
         <div class="tag-grid tag-grid-small">
             <button id="ma_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOilMa('oilS')">油（師）</button>
             <button id="ma_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleOilMa('oilB')">油（店）</button>
+            <div style="display:flex; gap:2px;">
+                <button id="ma_otherC" class="tag-btn" style="flex:1; font-size:16px; border-radius:10px 0 0 10px;" onclick="toggleMa('otherC')">其它(<span class="other-rate-disp"></span>%)</button>
+                <button class="tag-btn" style="width:40px; font-size:18px; border-radius:0 10px 10px 0; background:#444;" onclick="editOtherRate()">⚙️</button>
+            </div>
         </div>
         <input type="number" id="matchAmt" class="input-dark" placeholder="輸入預設金額 (例: 700)" style="margin-bottom:15px;">
 
@@ -173,9 +182,13 @@
             <button id="m_coupon" class="tag-btn" onclick="toggleM('coupon')">卷</button>
             <button id="m_private" class="tag-btn" style="color:var(--purple);" onclick="toggleM('private')">企進</button>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-            <button id="m_oilS" class="tag-btn" onclick="toggleOil('oilS')">油（師）</button>
-            <button id="m_oilB" class="tag-btn" onclick="toggleOil('oilB')">油（店）</button>
+        <div class="tag-grid tag-grid-small" style="margin-bottom:15px;">
+            <button id="m_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOil('oilS')">油（師）</button>
+            <button id="m_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleOil('oilB')">油（店）</button>
+            <div style="display:flex; gap:2px;">
+                <button id="m_otherC" class="tag-btn" style="flex:1; font-size:16px; border-radius:10px 0 0 10px;" onclick="toggleM('otherC')">其它(<span class="other-rate-disp"></span>%)</button>
+                <button class="tag-btn" style="width:40px; font-size:18px; border-radius:0 10px 10px 0; background:#444;" onclick="editOtherRate()">⚙️</button>
+            </div>
         </div>
         <div style="border-top: 1px solid #444; padding-top: 15px; margin-bottom: 20px;">
             <input type="number" id="customAmt" class="input-dark" placeholder="輸入自定義金額" style="margin-bottom:10px;">
@@ -185,7 +198,17 @@
         <button class="btn-action" style="background:none; color:#888; margin-top:15px;" onclick="closeM('amtModal')">不做變更並關閉</button>
     </div></div>
 
-    <div id="historyEditModal" class="modal"><div class="modal-content"><h3>修正明細</h3><div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:15px;"><button id="he_isD" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isD')">指名</button><button id="he_isExtra" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isExtra')">外</button><button id="he_isP" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isP')">簽名</button><button id="he_isC" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isC')">卷</button><button id="he_isPri" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleHE('isPri')">企進</button></div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;"><button id="he_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilS')">油（師）</button><button id="he_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilB')">油（店）</button></div><input type="number" id="he_amt" class="input-dark" placeholder="修改金額"><button class="btn-action" style="background:var(--blue)" onclick="saveHistoryEdit()">確認修改</button><button class="btn-action" style="background:none; color:#888;" onclick="closeM('historyEditModal')">取消</button></div></div>
+    <div id="historyEditModal" class="modal"><div class="modal-content"><h3>修正明細</h3><div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:15px;"><button id="he_isD" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isD')">指名</button><button id="he_isExtra" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isExtra')">外</button><button id="he_isP" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isP')">簽名</button><button id="he_isC" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isC')">卷</button><button id="he_isPri" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleHE('isPri')">企進</button></div>
+    <div class="tag-grid tag-grid-small" style="margin-bottom:15px;">
+        <button id="he_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilS')">油（師）</button>
+        <button id="he_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilB')">油（店）</button>
+        <div style="display:flex; gap:2px;">
+            <button id="he_otherC" class="tag-btn" style="flex:1; font-size:16px; border-radius:10px 0 0 10px;" onclick="toggleHE('otherC')">其它(<span class="other-rate-disp"></span>%)</button>
+            <button class="tag-btn" style="width:40px; font-size:18px; border-radius:0 10px 10px 0; background:#444;" onclick="editOtherRate()">⚙️</button>
+        </div>
+    </div>
+    <input type="number" id="he_amt" class="input-dark" placeholder="修改金額"><button class="btn-action" style="background:var(--blue)" onclick="saveHistoryEdit()">確認修改</button><button class="btn-action" style="background:none; color:#888;" onclick="closeM('historyEditModal')">取消</button></div></div>
+    
     <div id="actModal" class="modal"><div class="modal-content"><h2 id="actTitle" style="text-align:center; font-size:36px;"></h2><button class="btn-action" style="background:var(--blue); padding:25px 0;" onclick="handleAct('amt')">💰 金額記帳</button><button class="btn-action" style="background:var(--green); padding:25px 0;" onclick="handleAct('book')">⏰ 預約排程</button><button class="btn-action" style="background:none; border:1px solid #444;" onclick="closeM('actModal')">返回</button></div></div>
     <div id="logModal" class="modal"><div class="modal-content"><h3 id="logTitle"></h3><div id="logList"></div><button class="btn-action" style="background:#333;margin-top:20px;" onclick="closeM('logModal')">關閉</button></div></div>
     <div id="reportModal" class="modal"><div class="modal-content">
@@ -201,7 +224,8 @@
             </div>
         </div>
         <div id="reportArea"></div>
-        <button class="btn-action" style="background:#333; margin-top:20px;" onclick="closeM('reportModal')">關閉報表</button>
+        <button class="btn-action" style="background:var(--blue); margin-top:20px;" onclick="copyReportText()">📋 複製報表文字</button>
+        <button class="btn-action" style="background:#333; margin-top:10px;" onclick="closeM('reportModal')">關閉報表</button>
     </div></div>
 
     <script>
@@ -213,31 +237,28 @@
         const specialIds = [0, -1, -2]; 
         const getSpecialName = (id) => id === 0 ? '不指定' : (id === -1 ? '指男' : '指女');
         
-        // 性別設定動態化
         const defaultMale = [1, 5, 7, 9, 10, 11, 12, 13, 901, 902, 903];
         const defaultFemale = [2, 38, 100, 101, 904, 905, 906, 907];
 
         let selIds=[], isBoss=false, editBookId=null, matchSels=[]; 
-        let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
-        let bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
-        let matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false};
+        let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false};
+        let bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false};
+        let matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false};
 
         let specialCounts = { "0": 0, "-1": 0, "-2": 0 };
         let tempSpecId = null; 
         let activeHE = { d: null, r: null, l: null, isLive: false };
         let tempHE = {};
         let renamingStaffId = null;
+        let savedOtherRate = parseInt(localStorage.getItem('massageOtherRate')) || 75;
 
-        // 師傅名稱與性別對照表
         let staffNames = JSON.parse(localStorage.getItem('massageStaffNames')) || {};
-        // 初始化預設名稱與性別
         staffIds.forEach((id, index) => {
             if(!staffNames[id]) {
                 let name = index < 12 ? id.toString() : extraNames[index - 12];
                 let gender = defaultMale.includes(id) ? 'male' : 'female';
                 staffNames[id] = { name: name, gender: gender };
             } else if (typeof staffNames[id] === 'string') {
-                // 轉移舊版資料
                 let oldName = staffNames[id];
                 let gender = defaultMale.includes(id) ? 'male' : 'female';
                 staffNames[id] = { name: oldName, gender: gender };
@@ -246,8 +267,6 @@
 
         const getStaffDisplayName = (id) => staffNames[id] ? staffNames[id].name : id.toString();
         const getStaffGender = (id) => staffNames[id] ? staffNames[id].gender : 'male';
-        
-        // 取得即時的男女 ID 列表供匹配系統使用
         const getMaleIds = () => staffIds.filter(id => getStaffGender(id) === 'male');
         const getFemaleIds = () => staffIds.filter(id => getStaffGender(id) === 'female');
 
@@ -289,6 +308,126 @@
             render();
         };
         const showT = (m) => { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('active'); setTimeout(()=>t.classList.remove('active'),2000); };
+
+        function updateOtherRateUI() {
+            document.querySelectorAll('.other-rate-disp').forEach(el => el.innerText = savedOtherRate);
+        }
+
+        function editOtherRate() {
+            let newRate = prompt('請設定「其它」的師傅抽成比例\n(例如輸入 75 代表師傅抽75%，店家25%)', savedOtherRate);
+            if (newRate !== null && !isNaN(newRate) && newRate > 0 && newRate <= 100) {
+                savedOtherRate = parseInt(newRate);
+                localStorage.setItem('massageOtherRate', savedOtherRate);
+                updateOtherRateUI();
+                showT('抽成比例已更新為 ' + savedOtherRate + '%');
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showT('文字已複製');
+            } catch (err) {
+                showT('複製失敗，請手動選取');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => showT('文字已複製')).catch(err => {
+                    fallbackCopyTextToClipboard(text);
+                });
+            } else {
+                fallbackCopyTextToClipboard(text);
+            }
+        }
+
+        function copySettleText() {
+            let textArray = [];
+            let gTotal = 0, gSettle = 0;
+            const modeName = isBoss ? "店內結算" : "師傅結算";
+            textArray.push(`今日${modeName}。`);
+
+            staffData.filter(s=>s.logs.length>0).forEach(s=>{
+                let sSum=0, bSum=0, tAmt=0;
+                s.logs.forEach(l=>{
+                    if(l.isPri) return;
+                    tAmt += l.amt; 
+                    let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0;
+                    let rate = l.otherC ? (l.otherRate / 100) : 0.7;
+                    let sP = Math.round(l.amt * rate), bP = l.amt - sP;
+                    if(l.oilS) sSum += (sP + oil); else sSum += sP;
+                    if(l.oilB) bSum += (bP + oil); else bSum += bP;
+                    if(l.isP || l.isC) bSum -= l.amt;
+                });
+                const curS = isBoss ? bSum : sSum;
+                gTotal += tAmt; gSettle += curS;
+                const name = s.id > 0 ? getStaffDisplayName(s.id) : getSpecialName(s.id);
+                textArray.push(`師傅${name}號，總計${tAmt}，結算${curS}。`);
+            });
+            textArray.push(`全部總計${gTotal}，全部結算${gSettle}。`);
+            copyToClipboard(textArray.join('\n'));
+        }
+
+        function copyReportText() {
+            const selYear = document.getElementById('reportYear').value;
+            const selMonth = document.getElementById('reportMonth').value;
+            const monthPrefix = `${selYear}-${selMonth}`;
+            const monthLogs = historyData.filter(h => h.date.startsWith(monthPrefix));
+
+            if (monthLogs.length === 0) {
+                showT('此月份無資料可複製');
+                return;
+            }
+
+            const summary = {};
+            let grandTotal = 0;
+            let totalPersons = 0, totalCash = 0, totalSign = 0, totalCoupon = 0;
+
+            monthLogs.forEach(day => {
+                day.records.forEach(r => {
+                    if (!summary[r.id]) summary[r.id] = { total: 0 };
+                    const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
+                    const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
+                    summary[r.id].total += filteredTotal;
+
+                    filteredLogs.forEach(l => {
+                        totalPersons += 1;
+                        if (l.isP) totalSign += 1;
+                        else if (l.isC) totalCoupon += 1;
+                        else totalCash += 1;
+                    });
+                });
+            });
+
+            const sortedIds = Object.keys(summary).sort((a, b) => Number(a) - Number(b));
+            let textArray = [`${selYear}年${selMonth}月總業績報表。`];
+
+            sortedIds.forEach(id => {
+                const data = summary[id];
+                const name = id > 0 ? getStaffDisplayName(id) : getSpecialName(Number(id));
+                grandTotal += data.total;
+                textArray.push(`師傅${name}號，總計${data.total}。`);
+            });
+            
+            textArray.push(`本月統計數據如下：`);
+            textArray.push(`來店總人數${totalPersons}人。`);
+            textArray.push(`現金總人數${totalCash}人。`);
+            textArray.push(`簽名總人數${totalSign}人。`);
+            textArray.push(`卷總人數${totalCoupon}人。`);
+            textArray.push(`本月全部總計${grandTotal}元。`);
+
+            copyToClipboard(textArray.join('\n'));
+        }
 
         function initReportFilters() {
             const ySel = document.getElementById('reportYear'), mSel = document.getElementById('reportMonth');
@@ -404,7 +543,7 @@
                         let tags = []; 
                         if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
                         if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
-                        if(l.isPri) tags.push('[企]');
+                        if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`);
                         const timeTag = l.time ? `<span style="color:#888; font-size:14px; margin-left:15px;">${l.time}</span>` : '';
                         return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}${timeTag}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button></div>`;
                     }).join('') : '';
@@ -449,7 +588,7 @@
             if (isLive) tempHE = JSON.parse(JSON.stringify(staffData.find(s=>s.id===d).logs[l]));
             else tempHE = JSON.parse(JSON.stringify(historyData[d].records[r].fullLogs[l]));
             document.getElementById('he_amt').value = tempHE.amt;
-            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri'].forEach(k => { 
+            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri', 'otherC'].forEach(k => { 
                 const target = k === 'isD' ? 'he_isD' : (k === 'isPri' ? 'he_isPri' : 'he_'+k); 
                 const btn = document.getElementById(target); 
                 if(btn) btn.classList.toggle('tag-active', !!tempHE[k]); 
@@ -460,8 +599,13 @@
         function toggleHE(k) {
             if(k==='oilS'){ tempHE.oilS=!tempHE.oilS; if(tempHE.oilS) tempHE.oilB=false; }
             else if(k==='oilB'){ tempHE.oilB=!tempHE.oilB; if(tempHE.oilB) tempHE.oilS=false; }
+            else if(k==='otherC'){ 
+                tempHE.otherC = !tempHE.otherC; 
+                if(tempHE.otherC) tempHE.otherRate = savedOtherRate; 
+            }
             else { tempHE[k]=!tempHE[k]; }
-            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri'].forEach(key => { 
+            
+            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri', 'otherC'].forEach(key => { 
                 const target = key === 'isD' ? 'he_isD' : (key === 'isPri' ? 'he_isPri' : 'he_'+key);
                 const btn = document.getElementById(target); 
                 if(btn) btn.classList.toggle('tag-active', !!tempHE[key]); 
@@ -502,71 +646,39 @@
                 return a.time.localeCompare(b.time);   
             });
 
-            const sortedRankCandidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
-                const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
-                return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
-            });
-
             const tentDetailsForStaff = {}; 
-
             spReqs.forEach(req => {
                 const reqStart = new Date(`${req.date}T${req.time}`).getTime();
                 const reqEnd = reqStart + (req.dur * 60000);
-                const targetSid = sortedRankCandidates.find(s => {
-                    if (!tentDetailsForStaff[s.id]) tentDetailsForStaff[s.id] = [];
-                    const staffTentative = tentDetailsForStaff[s.id];
+                const candidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
+                    const aBusy = a.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
+                    const bBusy = b.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
+                    if (aBusy && !bBusy) return 1; 
+                    if (!aBusy && bBusy) return -1; 
+                    const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
+                    return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
+                });
+                const targetSid = candidates.find(s => {
                     if (req.spId === -1 && getStaffGender(s.id) !== 'male') return false;
                     if (req.spId === -2 && getStaffGender(s.id) !== 'female') return false;
-                    const hasConflictWithBooking = s.bookings.some(b => {
-                        const bS = new Date(`${b.date}T${b.time}`).getTime();
-                        const bE = bS + (b.dur * 60000);
-                        return (reqStart < bE && reqEnd > bS);
-                    });
-                    if (hasConflictWithBooking) return false;
-                    const hasConflictWithTentative = staffTentative.some(t => {
-                        const tS = new Date(`${t.date}T${t.time}`).getTime();
-                        const tE = tS + (t.dur * 60000);
-                        return (reqStart < tE && reqEnd > tS);
-                    });
-                    return !hasConflictWithTentative;
+                    const hasConflict = s.bookings.some(b => { const bS = new Date(`${b.date}T${b.time}`).getTime(); const bE = bS + (b.dur * 60000); return (reqStart < bE && reqEnd > bS); }) || (tentDetailsForStaff[s.id] && tentDetailsForStaff[s.id].some(t => { const tS = new Date(`${t.date}T${t.time}`).getTime(); const tE = tS + (t.dur * 60000); return (reqStart < tE && reqEnd > tS); }));
+                    return !hasConflict;
                 });
-                if (targetSid) {
-                    if (!tentDetailsForStaff[targetSid.id]) tentDetailsForStaff[targetSid.id] = [];
-                    tentDetailsForStaff[targetSid.id].push(req);
-                    tentativeMap[targetSid.id] = tentDetailsForStaff[targetSid.id][0]; 
-                }
+                if (targetSid) { if (!tentDetailsForStaff[targetSid.id]) tentDetailsForStaff[targetSid.id] = []; tentDetailsForStaff[targetSid.id].push(req); }
             });
 
             let changed = false;
             staffData.forEach(s => {
                 s.bookings = s.bookings.filter(b => {
-                    const sMs = new Date(`${b.date}T${b.time}`).getTime();
-                    const eMs = sMs + (b.dur * 60000);
+                    const eMs = new Date(`${b.date}T${b.time}`).getTime() + (b.dur * 60000);
                     if (nowMs > eMs) {
                         if (b.amt > 0) {
-                            let logData = {
-                                amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC,
-                                isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri,
-                                time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}`
-                            };
-                            
+                            let log = { amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC, isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri, otherC: b.otherC, otherRate: b.otherRate, time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}` };
                             if (s.id <= 0) {
                                 let assignedSid = null;
-                                for (let sid in tentDetailsForStaff) {
-                                    if (tentDetailsForStaff[sid].some(req => req.id === b.id)) {
-                                        assignedSid = parseInt(sid);
-                                        break;
-                                    }
-                                }
-                                if (assignedSid) {
-                                    const targetStaff = staffData.find(x => x.id === assignedSid);
-                                    if (targetStaff) targetStaff.logs.push(logData);
-                                } else {
-                                    s.logs.push(logData); 
-                                }
-                            } else {
-                                s.logs.push(logData);
-                            }
+                                for (let sid in tentDetailsForStaff) { if (tentDetailsForStaff[sid].some(req => req.id === b.id)) { assignedSid = parseInt(sid); break; } }
+                                if (assignedSid) { const target = staffData.find(x => x.id === assignedSid); if (target) target.logs.push(log); } else { s.logs.push(log); }
+                            } else { s.logs.push(log); }
                             changed = true;
                         }
                         return false;
@@ -578,12 +690,8 @@
 
             const rA = document.getElementById('rankArea'); rA.innerHTML = '';
             const rankedStaff = staffData.filter(s=>s.inRank && s.id > 0).sort((a,b)=>{ 
-                const aOngoing = a.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
-                const bOngoing = b.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); });
-                const aTentActive = tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => nowMs >= new Date(`${t.date}T${t.time}`).getTime());
-                const bTentActive = tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => nowMs >= new Date(`${t.date}T${t.time}`).getTime());
-                const aBusy = aOngoing || aTentActive;
-                const bBusy = bOngoing || bTentActive;
+                const aBusy = a.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
+                const bBusy = b.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
                 if (aBusy && !bBusy) return 1; if (!aBusy && bBusy) return -1;
                 const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                 return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
@@ -593,128 +701,52 @@
             const itemHeight = count <= 6 ? 100 : Math.max(60, 520 / count);
             rankedStaff.forEach((s,i)=>{
                 const allUpcoming = [];
-                s.bookings.forEach(b => {
-                    const sMs = new Date(`${b.date}T${b.time}`).getTime();
-                    const eMs = sMs + (b.dur * 60000);
-                    if (eMs > nowMs) allUpcoming.push({ ...b, type: 'real', sMs, eMs });
-                });
-                if (tentDetailsForStaff[s.id]) {
-                    tentDetailsForStaff[s.id].forEach(t => {
-                        const sMs = new Date(`${t.date}T${t.time}`).getTime();
-                        const eMs = sMs + (t.dur * 60000);
-                        if (eMs > nowMs) allUpcoming.push({ ...t, type: 'tentative', sMs, eMs });
-                    });
-                }
+                s.bookings.forEach(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); const eMs = sMs + (b.dur * 60000); if (eMs > nowMs) allUpcoming.push({ ...b, type: 'real', sMs, eMs }); });
+                if (tentDetailsForStaff[s.id]) { tentDetailsForStaff[s.id].forEach(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); const eMs = sMs + (t.dur * 60000); if (eMs > nowMs) allUpcoming.push({ ...t, type: 'tentative', sMs, eMs }); }); }
                 allUpcoming.sort((a, b) => a.sMs - b.sMs);
-
                 let displayHtml = '';
                 const nextTwo = allUpcoming.slice(0, 2);
-                
-                if (nextTwo.length === 0) {
-                    displayHtml = '<span class="b-text">現場</span>';
-                } else {
-                    nextTwo.forEach((item, idx) => {
-                        const isBusyNow = nowMs >= item.sMs && nowMs <= item.eMs;
-                        const endObj = new Date(item.eMs);
-                        const endT = `${String(endObj.getHours()).padStart(2,'0')}:${String(endObj.getMinutes()).padStart(2,'0')}`;
-                        
-                        if (isBusyNow) {
-                            displayHtml += `<div class="busy-text">${endT} 結束</div>`;
-                        } else {
-                            const label = item.type === 'tentative' ? '暫定' : '';
-                            displayHtml += `<div class="${item.type === 'tentative' ? 'tentative-text' : 'b-text'}">${item.time} (${item.dur}分) ${label}</div>`;
-                        }
+                if (nextTwo.length === 0) { displayHtml = '<span class="b-text">現場</span>'; } else {
+                    nextTwo.forEach(item => { const isBusyNow = nowMs >= item.sMs && nowMs <= item.eMs; const endObj = new Date(item.eMs); const endT = `${String(endObj.getHours()).padStart(2,'0')}:${String(endObj.getMinutes()).padStart(2,'0')}`;
+                        if (isBusyNow) { displayHtml += `<div class="busy-text">${endT} 結束</div>`; } else { displayHtml += `<div class="${item.type === 'tentative' ? 'tentative-text' : 'b-text'}">${item.time} (${item.dur}分) ${item.type === 'tentative' ? '暫定' : ''}</div>`; }
                     });
                 }
-
                 const div = document.createElement('div'); div.className='rank-item'; div.style.top=(i*itemHeight)+'px'; div.style.height = (itemHeight - 5) + 'px'; 
                 const hasBusy = nextTwo.some(item => nowMs >= item.sMs && nowMs <= item.eMs);
                 const hasTentative = nextTwo.some(item => item.type === 'tentative' && nowMs < item.sMs);
                 div.style.borderColor = hasBusy ? 'var(--red)' : (hasTentative ? 'var(--yellow)' : 'var(--green)');
                 div.onclick=()=>{ selIds=[s.id]; document.getElementById('actTitle').innerText=getStaffDisplayName(s.id); resetModes(); document.getElementById('actModal').style.display='flex'; };
-                
                 const gMarker = getStaffGender(s.id) === 'male' ? '<span class="gender-male">♂</span>' : '<span class="gender-female">♀</span>';
                 div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:28px;margin-right:15px;font-weight:bold;width:60px;overflow:hidden;">${getStaffDisplayName(s.id)}${gMarker}</span><div style="display:flex; flex-direction:column; gap:1px;">${displayHtml}</div></div><b style="font-size:26px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
                 rA.appendChild(div);
             });
 
-            document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=> {
-                const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀';
-                return `<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${getStaffDisplayName(s.id)}<span style="font-size:12px; opacity:0.6; display:block;">${gMarker}</span></div>`;
-            }).join('');
+            document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=> `<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${getStaffDisplayName(s.id)}<span style="font-size:12px; opacity:0.6; display:block;">${getStaffGender(s.id) === 'male' ? '♂' : '♀'}</span></div>`).join('');
             document.getElementById('bookStaffSpecial').innerHTML = specialIds.map(id => { const c = specialCounts[id]; return `<div class="staff-btn staff-btn-sm ${c > 0 ? 'active' : ''}" style="position:relative;" onclick="openPerson(${id})">${getSpecialName(id)}${c > 0 ? `<div class="count-badge">${c}</div>` : ''}</div>`; }).join('');
-            
-            let selText = []; 
-            selIds.forEach(id => selText.push(getStaffDisplayName(id))); 
-            specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
+            let selText = []; selIds.forEach(id => selText.push(getStaffDisplayName(id))); specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
             document.getElementById('selNumDisp').innerText = selText.length > 0 ? selText.join(', ') : '請選擇';
-            
-            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>{
-                const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀';
-                const gClass = getStaffGender(s.id) === 'male' ? 'gender-male' : 'gender-female';
-                return `
-                <div class="staff-btn ${s.inRank?'active':''}" 
-                     onclick="tRank(${s.id})" 
-                     ondblclick="renameStaff(${s.id})">
-                     ${getStaffDisplayName(s.id)}<span class="${gClass}" style="display:block; font-size:16px;">${gMarker}</span>
-                </div>`
-            }).join('');
-            
+            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>{ const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀'; const gClass = getStaffGender(s.id) === 'male' ? 'gender-male' : 'gender-female'; return `<div class="staff-btn ${s.inRank?'active':''}" onclick="tRank(${s.id})" ondblclick="renameStaff(${s.id})">${getStaffDisplayName(s.id)}<span class="${gClass}" style="display:block; font-size:16px;">${gMarker}</span></div>` }).join('');
             updateSettleAndList();
         }
 
-        function renameStaff(id) {
-            const oldName = getStaffDisplayName(id);
-            const newName = prompt(`修改 ${oldName} 的顯示名稱：`, oldName);
-            if(newName !== null && newName.trim() !== "") {
-                renamingStaffId = id;
-                staffNames[id].name = newName.trim();
-                // 顯示性別選擇 Modal
-                document.getElementById('genderTitle').innerText = `設定 ${newName.trim()} 的性別`;
-                document.getElementById('genderModal').style.display = 'flex';
-            }
-        }
-
-        function setStaffGender(gender) {
-            if(renamingStaffId && staffNames[renamingStaffId]) {
-                staffNames[renamingStaffId].gender = gender;
-                save();
-                closeM('genderModal');
-                renamingStaffId = null;
-                showT('資料已更新');
-            }
-        }
-
+        function renameStaff(id) { const oldName = getStaffDisplayName(id); const newName = prompt(`修改 ${oldName} 的顯示名稱：`, oldName); if(newName !== null && newName.trim() !== "") { renamingStaffId = id; staffNames[id].name = newName.trim(); document.getElementById('genderTitle').innerText = `設定 ${newName.trim()} 的性別`; document.getElementById('genderModal').style.display = 'flex'; } }
+        function setStaffGender(gender) { if(renamingStaffId && staffNames[renamingStaffId]) { staffNames[renamingStaffId].gender = gender; save(); closeM('genderModal'); renamingStaffId = null; showT('資料已更新'); } }
         function openPerson(id) { tempSpecId = id; document.getElementById('personTitle').innerText = `選擇「${getSpecialName(id)}」人數`; document.getElementById('personModal').style.display = 'flex'; }
-        
-        function setPersonCount(count) { 
-            specialCounts[tempSpecId] = count; 
-            closeM('personModal'); 
-            if(document.getElementById('matchModal').style.display==='flex'){ 
-                const target = document.getElementById('m-'+tempSpecId);
-                if(target) {
-                    target.classList.toggle('selected', specialCounts[tempSpecId]>0); 
-                    const badge = target.querySelector('.count-badge');
-                    if(badge) badge.innerText = count; 
-                    else if(count>0) target.innerHTML += `<div class="count-badge">${count}</div>`; 
-                    if(count === 0 && badge) badge.remove();
-                }
-            } 
-            render(); 
-        }
-
+        function setPersonCount(count) { specialCounts[tempSpecId] = count; closeM('personModal'); if(document.getElementById('matchModal').style.display==='flex'){ const target = document.getElementById('m-'+tempSpecId); if(target) { target.classList.toggle('selected', specialCounts[tempSpecId]>0); const badge = target.querySelector('.count-badge'); if(badge) badge.innerText = count; else if(count>0) target.innerHTML += `<div class="count-badge">${count}</div>`; if(count === 0 && badge) badge.remove(); } } render(); }
         function tBookSel(id) { const idx = selIds.indexOf(id); if(idx > -1) selIds.splice(idx, 1); else selIds.push(id); render(); }
 
         function updateSettleAndList() {
             let gTotal = 0, gSettle = 0;
             document.getElementById('settleBody').innerHTML = staffData.filter(s=>s.logs.length>0).map(s=>{
                 let sSum=0, bSum=0, tAmt=0;
-                s.logs.forEach(l=>{
-                    if(l.isPri) return;
-                    tAmt += l.amt; let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0;
-                    let sP = Math.round(l.amt * 0.7), bP = l.amt - sP;
-                    if(l.oilS) sSum += (sP + oil); else sSum += sP;
-                    if(l.oilB) bSum += (bP + oil); else bSum += bP;
+                s.logs.forEach(l=>{ 
+                    if(l.isPri) return; 
+                    tAmt += l.amt; 
+                    let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0; 
+                    let rate = l.otherC ? (l.otherRate / 100) : 0.7;
+                    let sP = Math.round(l.amt * rate), bP = l.amt - sP; 
+                    if(l.oilS) sSum += (sP + oil); else sSum += sP; 
+                    if(l.oilB) bSum += (bP + oil); else bSum += bP; 
                     if(l.isP || l.isC) bSum -= l.amt; 
                 });
                 const curS = isBoss ? bSum : sSum; gTotal += tAmt; gSettle += curS;
@@ -730,10 +762,7 @@
             selIds=[id]; const s=staffData.find(x=>x.id===id); 
             document.getElementById('logTitle').innerText = (id > 0 ? getStaffDisplayName(id) : getSpecialName(id))+'今日明細';
             document.getElementById('logList').innerHTML = s.logs.map((l,i)=>{
-                let tags = []; 
-                if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
-                if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
-                if(l.isPri) tags.push('[企]');
+                let tags = []; if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]'); if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`);
                 const timeStr = l.time ? `<span style="font-size:16px;color:#888;margin-left:15px;">${l.time}</span>` : '';
                 return `<div style="padding:15px 10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;flex-direction:column;"><span style="font-size:24px;font-weight:bold;color:${l.isPri?'var(--purple)':'var(--green)'};">$${l.amt}${timeStr}</span><span style="font-size:16px;color:var(--orange);">${tags.join(' ')}</span></div><div><button onclick="openHE(${id},0,${i},true)" class="btn-edit" style="margin-right:5px;">改</button><button onclick="delL(${id},${i})" class="btn-del">刪</button></div></div>`;
             }).join('');
@@ -742,97 +771,35 @@
 
         function checkAvailability(startMs, endMs, selStaffIds, newCounts) {
             const realStaff = staffData.filter(s => s.id > 0 && s.inRank);
-            let availablePool = realStaff.filter(s => {
-                const isBusy = s.bookings.some(b => {
-                    if (editBookId && b.id === editBookId) return false;
-                    const bS = new Date(`${b.date}T${b.time}`).getTime();
-                    const bE = bS + (b.dur * 60000);
-                    return (startMs < bE && endMs > bS);
-                });
-                return !isBusy;
-            });
-
-            let existingMaleReq = 0, existingFemaleReq = 0, existingAnyReq = 0;
-            [-1, -2, 0].forEach(spId => {
-                const spStaff = staffData.find(s => s.id === spId);
-                if (spStaff) {
-                    const overlaps = spStaff.bookings.filter(b => {
-                        if (editBookId && b.id === editBookId) return false;
-                        const bS = new Date(`${b.date}T${b.time}`).getTime();
-                        const bE = bS + (b.dur * 60000);
-                        return (startMs < bE && endMs > bS);
-                    });
-                    if (spId === -1) existingMaleReq += overlaps.length;
-                    if (spId === -2) existingFemaleReq += overlaps.length;
-                    if (spId === 0) existingAnyReq += overlaps.length;
-                }
-            });
-
-            const reqMale = (newCounts['-1'] || 0) + existingMaleReq;
-            const reqFemale = (newCounts['-2'] || 0) + existingFemaleReq;
-            const reqAny = (newCounts['0'] || 0) + existingAnyReq;
-
-            for (let sid of selStaffIds) {
-                const idx = availablePool.findIndex(s => s.id === sid);
-                if (idx === -1) return false; 
-                availablePool.splice(idx, 1); 
-            }
-
-            let currentMaleIds = getMaleIds();
-            let currentFemaleIds = getFemaleIds();
-            
-            let availableMales = availablePool.filter(s => currentMaleIds.includes(s.id)).length;
-            let availableFemales = availablePool.filter(s => currentFemaleIds.includes(s.id)).length;
-            if (availableMales < reqMale) return false;
-            if (availableFemales < reqFemale) return false;
-            let remaining = availablePool.length - reqMale - reqFemale;
-            if (remaining < reqAny) return false;
-            return true;
+            let availablePool = realStaff.filter(s => { const isBusy = s.bookings.some(b => { if (editBookId && b.id === editBookId) return false; const bS = new Date(`${b.date}T${b.time}`).getTime(); const bE = bS + (b.dur * 60000); return (startMs < bE && endMs > bS); }); return !isBusy; });
+            let reqM = newCounts['-1'] || 0, reqF = newCounts['-2'] || 0, reqA = newCounts['0'] || 0;
+            [-1, -2, 0].forEach(spId => { const sp = staffData.find(s => s.id === spId); if (sp) { const overlaps = sp.bookings.filter(b => { if (editBookId && b.id === editBookId) return false; const bS = new Date(`${b.date}T${b.time}`).getTime(); const bE = bS + (b.dur * 60000); return (startMs < bE && endMs > bS); }); if (spId === -1) reqM += overlaps.length; if (spId === -2) reqF += overlaps.length; if (spId === 0) reqA += overlaps.length; } });
+            for (let sid of selStaffIds) { const idx = availablePool.findIndex(s => s.id === sid); if (idx === -1) return false; availablePool.splice(idx, 1); }
+            let aM = availablePool.filter(s => getStaffGender(s.id) === 'male').length, aF = availablePool.filter(s => getStaffGender(s.id) === 'female').length;
+            return aM >= reqM && aF >= reqF && (availablePool.length - reqM - reqF) >= reqA;
         }
 
         function addB(fT = null, fD = null, mIds = null){
             const d=document.getElementById('bookDate').value, t=fT || document.getElementById('bookTime').value, du=fD || parseInt(document.getElementById('bookDur').value), nt=document.getElementById('bookNote').value;
-            const activeMode = fT ? matchMode : bookMode;
-            const activeAmt = fT ? (parseInt(document.getElementById('matchAmt').value) || 0) : (parseInt(document.getElementById('bookAmt').value) || 0);
-
+            const activeMode = fT ? matchMode : bookMode, activeAmt = fT ? (parseInt(document.getElementById('matchAmt').value) || 0) : (parseInt(document.getElementById('bookAmt').value) || 0);
             const aS = specialIds.filter(id => specialCounts[id] > 0); let tIds = mIds ? mIds : selIds;
             if(tIds.length===0 && aS.length===0) return alert('請選取號碼或人數'); if(!t) return alert('請填寫時間');
             const start = new Date(`${d}T${t}`).getTime(), end = start + (du * 60000);
-
-            if (!checkAvailability(start, end, tIds, specialCounts)) {
-                return alert('時段衝突！該時段人力不足或指定師傅忙碌/未上班。');
-            }
-
+            if (!checkAvailability(start, end, tIds, specialCounts)) return alert('時段衝突！該時段人力不足或指定師傅忙碌/未上班。');
             if(editBookId !== null) staffData.forEach(s => { s.bookings = s.bookings.filter(b => b.id !== editBookId); });
-            
-            const bData = {
-                id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt,
-                amt: activeAmt, isD: activeMode.des, isP: activeMode.sign, isC: activeMode.coupon,
-                isExtra: activeMode.extra, oilS: activeMode.oilS, oilB: activeMode.oilB, isPri: activeMode.private
-            };
-
-            tIds.forEach(sid => { const s = staffData.find(x=>x.id===sid); s.bookings.push({...bData, id:Date.now() + Math.random()}); });
+            const bData = { id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt, amt: activeAmt, isD: activeMode.des, isP: activeMode.sign, isC: activeMode.coupon, isExtra: activeMode.extra, oilS: activeMode.oilS, oilB: activeMode.oilB, isPri: activeMode.private, otherC: activeMode.otherC, otherRate: activeMode.otherC ? savedOtherRate : null };
+            tIds.forEach(sid => { staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
             aS.forEach(sid => { for(let i=0; i<specialCounts[sid]; i++) staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
-            
-            editBookId = null; 
-            document.getElementById('cancelBookBtn').style.display='none'; 
-            document.getElementById('bookNote').value = ''; 
-            document.getElementById('bookAmt').value = '';
-            selIds = []; 
-            specialCounts = { "0": 0, "-1": 0, "-2": 0 };
-            resetBookMode();
-            save(); render(); showT(fT ? '匹配預約成功' : '預約成功');
+            editBookId = null; document.getElementById('cancelBookBtn').style.display='none'; document.getElementById('bookNote').value = ''; document.getElementById('bookAmt').value = '';
+            selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; resetBookMode(); save(); render(); showT(fT ? '匹配預約成功' : '預約成功');
         }
 
         function openMatch(){
-            matchSels = []; 
-            specialCounts = { "0": 0, "-1": 0, "-2": 0 };
-            resetMatchMode();
+            matchSels = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; resetMatchMode();
             document.getElementById('matchStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div id="m-${s.id}" class="match-btn-item" onclick="tMatch(${s.id}, false)">${getStaffDisplayName(s.id)}</div>`).join('');
             document.getElementById('matchSpecialGrid').innerHTML = specialIds.map(id => `<div id="m-${id}" class="match-btn-item" onclick="tMatch(${id}, true)">${getSpecialName(id)}</div>`).join('');
             const mDur = document.getElementById('matchDur'); mDur.innerHTML = ''; for(let i=15; i<=180; i+=15) mDur.innerHTML+=`<option value="${i}">${i} 分鐘</option>`; mDur.value = 60;
-            const sHr = document.getElementById('matchStartHr'), eHr = document.getElementById('matchEndHr');
-            sHr.innerHTML = ''; eHr.innerHTML = '';
+            const sHr = document.getElementById('matchStartHr'), eHr = document.getElementById('matchEndHr'); sHr.innerHTML = ''; eHr.innerHTML = '';
             for(let i=0; i<24; i++){ let opt=`<option value="${i}">${String(i).padStart(2,'0')}:00</option>`; sHr.innerHTML+=opt; eHr.innerHTML+=opt; }
             sHr.value = getTW().getHours(); eHr.value = 23;
             document.getElementById('matchResults').innerHTML = ''; document.getElementById('matchModal').style.display='flex';
@@ -840,29 +807,17 @@
         function tMatch(id, isSpec){ if(isSpec) openPerson(id); else { const idx = matchSels.indexOf(id); if(idx>-1) matchSels.splice(idx,1); else matchSels.push(id); document.getElementById('m-'+id).classList.toggle('selected', matchSels.includes(id)); } }
         
         function runMatch(){
-            const aS = specialIds.filter(id => specialCounts[id] > 0); 
-            if(matchSels.length===0 && aS.length===0) return alert('請選擇師傅或人數');
-            const dur = parseInt(document.getElementById('matchDur').value); 
-            const resArea = document.getElementById('matchResults'); resArea.innerHTML = '計算中...';
-            const startHr = parseInt(document.getElementById('matchStartHr').value);
-            const endHr = parseInt(document.getElementById('matchEndHr').value);
+            const aS = specialIds.filter(id => specialCounts[id] > 0); if(matchSels.length===0 && aS.length===0) return alert('請選擇師傅或人數');
+            const dur = parseInt(document.getElementById('matchDur').value), resArea = document.getElementById('matchResults'); resArea.innerHTML = '計算中...';
+            const sHr = parseInt(document.getElementById('matchStartHr').value), eHr = parseInt(document.getElementById('matchEndHr').value);
             const now = getTW(); let check = new Date(now.getTime());
-            if (check.getHours() < startHr || (check.getHours() === startHr && check.getMinutes() === 0 && check.getTime() < now.getTime())) { 
-                check.setHours(startHr, 0, 0, 0); 
-            } else {
-                const m = check.getMinutes(); const remainder = m % 5;
-                if (remainder !== 0) { check.setMinutes(m + (5 - remainder)); check.setSeconds(0, 0); } else { check.setSeconds(0, 0); }
-            }
-            let found = []; let safetyLimit = 1440;
-            while(found.length < 5 && safetyLimit > 0){
-                if (check.getHours() >= endHr || check.getDate() !== now.getDate()) { if (!(check.getHours() === endHr && check.getMinutes() === 0)) break; }
-                const start = check.getTime(), end = start + (dur * 60000);
-                const ok = checkAvailability(start, end, matchSels, specialCounts);
-                if(ok){
-                    const timeStr = `${String(check.getHours()).padStart(2,'0')}:${String(check.getMinutes()).padStart(2,'0')}`;
-                    if (!found.includes(timeStr)) found.push(timeStr);
-                }
-                check.setMinutes(check.getMinutes() + 5); safetyLimit--;
+            if (check.getHours() < sHr || (check.getHours() === sHr && check.getMinutes() === 0 && check.getTime() < now.getTime())) { check.setHours(sHr, 0, 0, 0); } 
+            else { const m = check.getMinutes(); const r = m % 5; if (r !== 0) { check.setMinutes(m + (5 - r)); } check.setSeconds(0, 0); }
+            let found = []; let safety = 1440;
+            while(found.length < 5 && safety > 0){
+                if (check.getHours() >= eHr || check.getDate() !== now.getDate()) { if (!(check.getHours() === eHr && check.getMinutes() === 0)) break; }
+                if(checkAvailability(check.getTime(), check.getTime() + (dur * 60000), matchSels, specialCounts)){ const tStr = `${String(check.getHours()).padStart(2,'0')}:${String(check.getMinutes()).padStart(2,'0')}`; if (!found.includes(tStr)) found.push(tStr); }
+                check.setMinutes(check.getMinutes() + 5); safety--;
             }
             resArea.innerHTML = found.length ? found.map(t=>`<div class="result-item"><b>${t} (${dur}分)</b><button onclick="addB('${t}',${dur}, [${matchSels.join(',')}]);closeM('matchModal')" style="background:var(--green);border:none;color:#fff;padding:8px 15px;border-radius:8px;cursor:pointer;">選用</button></div>`).join('') : '此區間無空檔';
         }
@@ -871,47 +826,28 @@
             const s = staffData.find(x=>x.id===sid); const b = s.bookings.find(x=>x.id===bid); if(!b) return;
             editBookId = bid; selIds = [sid]; document.getElementById('bookDate').value = b.date; document.getElementById('bookTime').value = b.time; document.getElementById('bookDur').value = b.dur; document.getElementById('bookNote').value = b.note || '';
             document.getElementById('bookAmt').value = b.amt || '';
-            bookMode = {des:!!b.isD, extra:!!b.isExtra, sign:!!b.isP, coupon:!!b.isC, oilS:!!b.oilS, oilB:!!b.oilB, private:!!b.isPri};
-            updateBookTags();
-            document.getElementById('cancelBookBtn').style.display = 'block'; showPage('page-book');
+            bookMode = {des:!!b.isD, extra:!!b.isExtra, sign:!!b.isP, coupon:!!b.isC, oilS:!!b.oilS, oilB:!!b.oilB, private:!!b.isPri, otherC:!!b.otherC};
+            updateBookTags(); document.getElementById('cancelBookBtn').style.display = 'block'; showPage('page-book');
         }
 
         function cancelEditB(){ editBookId = null; document.getElementById('cancelBookBtn').style.display = 'none'; document.getElementById('bookNote').value = ''; document.getElementById('bookAmt').value = ''; resetBookMode(); showPage('page-list'); }
-        
-        function showPage(p){ 
-            if(p !== 'page-book') { selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; }
-            document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active', x.id===p)); 
-            render(); 
-        }
-
+        function showPage(p){ if(p !== 'page-book') { selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; } document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active', x.id===p)); render(); }
         function toggleBk(t){ bookMode[t]=!bookMode[t]; updateBookTags(); }
         function toggleOilBk(t) { if(t==='oilS'){bookMode.oilS=!bookMode.oilS; if(bookMode.oilS)bookMode.oilB=false;} else{bookMode.oilB=!bookMode.oilB; if(bookMode.oilS)bookMode.oilS=false;} updateBookTags(); }
-        function resetBookMode() { bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; updateBookTags(); }
-        function updateBookTags() { ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('bk_'+k).style.borderColor=bookMode[k]?'#fff':'transparent'); }
-
+        function resetBookMode() { bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; updateBookTags(); }
+        function updateBookTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('bk_'+k); if(el) el.style.borderColor=bookMode[k]?'#fff':'transparent'; }); }
         function toggleMa(t){ matchMode[t]=!matchMode[t]; updateMatchTags(); }
         function toggleOilMa(t) { if(t==='oilS'){matchMode.oilS=!matchMode.oilS; if(matchMode.oilS)matchMode.oilB=false;} else{matchMode.oilB=!matchMode.oilB; if(matchMode.oilB)matchMode.oilS=false;} updateMatchTags(); }
-        function resetMatchMode() { matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; updateMatchTags(); document.getElementById('matchAmt').value=''; }
-        function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('ma_'+k).style.borderColor=matchMode[k]?'#fff':'transparent'); }
-
+        function resetMatchMode() { matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; updateMatchTags(); document.getElementById('matchAmt').value=''; }
+        function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('ma_'+k); if(el) el.style.borderColor=matchMode[k]?'#fff':'transparent'; }); }
         function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
-        
-        // 修正了這裡的邏輯：點擊油(店)時，應該將油(師)設為false
         function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
-        
-        function resetModes() { 
-            mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false}; 
-            ['des','extra','sign','coupon','oilS','oilB','private'].forEach(k=>document.getElementById('m_'+k).style.borderColor='transparent'); 
-            document.getElementById('customAmt').value = ''; 
-        }
+        function resetModes() { mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('m_'+k); if(el) el.style.borderColor='transparent'; }); document.getElementById('customAmt').value = ''; }
 
         function hAmt(a){ 
-            const amt = parseInt(a);
-            if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
-            const now = getTW();
-            const timeTag = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            const s = staffData.find(x=>x.id===selIds[0]); 
-            s.logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, time: timeTag}); 
+            const amt = parseInt(a); if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
+            const now = getTW(); const timeTag = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            staffData.find(x=>x.id===selIds[0]).logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, otherC:mode.otherC, otherRate:mode.otherC ? savedOtherRate : null, time: timeTag}); 
             closeM('amtModal'); save(); render(); 
         }
 
@@ -925,12 +861,10 @@
 
         document.getElementById('priceBtnGroup').innerHTML = [200,350,500,700,800,1050,1200,1400].map(p=>`<button class="btn-action" style="background:#444" onclick="hAmt(${p})">${p}</button>`).join('');
         const dD = document.getElementById('bookDur'); for(let i=15;i<=180;i+=15) dD.innerHTML+=`<option value="${i}">${i} 分</option>`; dD.value=60;
+        const iNow = getTW(); const dStr = iNow.getFullYear()+'-'+String(iNow.getMonth()+1).padStart(2,'0')+'-'+String(iNow.getDate()).padStart(2,'0');
+        document.getElementById('todayDate').value = dStr; document.getElementById('bookDate').value = dStr;
         
-        const iNow = getTW(); 
-        const dateStr = iNow.getFullYear()+'-'+String(iNow.getMonth()+1).padStart(2,'0')+'-'+String(iNow.getDate()).padStart(2,'0');
-        document.getElementById('todayDate').value = dateStr;
-        document.getElementById('bookDate').value = dateStr;
-        
+        updateOtherRateUI();
         render(); setInterval(render, 30000);
     </script>
 </body>
