@@ -354,6 +354,7 @@
         function copySettleText() {
             let textArray = [];
             let gTotal = 0, gSettle = 0;
+            let dPersons = 0, dCash = 0, dSign = 0, dCoupon = 0;
             const modeName = isBoss ? "店內結算" : "師傅結算";
             textArray.push(`今日${modeName}。`);
 
@@ -361,6 +362,12 @@
                 let sSum=0, bSum=0, tAmt=0;
                 s.logs.forEach(l=>{
                     if(l.isPri) return;
+                    
+                    dPersons++;
+                    if(l.isP) dSign++;
+                    else if(l.isC) dCoupon++;
+                    else dCash++;
+
                     tAmt += l.amt; 
                     let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0;
                     let rate = l.otherC ? (l.otherRate / 100) : 0.7;
@@ -374,7 +381,14 @@
                 const name = s.id > 0 ? getStaffDisplayName(s.id) : getSpecialName(s.id);
                 textArray.push(`師傅${name}號，總計${tAmt}，結算${curS}。`);
             });
+            
+            textArray.push(`今日統計數據如下：`);
+            textArray.push(`來店總人數${dPersons}人。`);
+            textArray.push(`現金人數${dCash}人。`);
+            textArray.push(`簽名人數${dSign}人。`);
+            textArray.push(`卷人數${dCoupon}人。`);
             textArray.push(`全部總計${gTotal}，全部結算${gSettle}。`);
+            
             copyToClipboard(textArray.join('\n'));
         }
 
@@ -425,6 +439,41 @@
             textArray.push(`簽名總人數${totalSign}人。`);
             textArray.push(`卷總人數${totalCoupon}人。`);
             textArray.push(`本月全部總計${grandTotal}元。`);
+
+            copyToClipboard(textArray.join('\n'));
+        }
+
+        function copyHistoryDayText(idx) {
+            const day = historyData[idx];
+            if (!day) return;
+            let textArray = [`${day.date} 業績結算。`];
+            let gTotal = 0;
+            let dPersons = 0, dCash = 0, dSign = 0, dCoupon = 0;
+            
+            day.records.forEach(r => {
+                const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
+                const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
+                
+                filteredLogs.forEach(l => {
+                    dPersons += 1;
+                    if (l.isP) dSign += 1;
+                    else if (l.isC) dCoupon += 1;
+                    else dCash += 1;
+                });
+
+                const name = r.id > 0 ? getStaffDisplayName(r.id) : getSpecialName(Number(r.id));
+                gTotal += filteredTotal;
+                if(filteredTotal > 0) {
+                    textArray.push(`師傅${name}號，總計${filteredTotal}。`);
+                }
+            });
+
+            textArray.push(`當日統計數據如下：`);
+            textArray.push(`來店總人數${dPersons}人。`);
+            textArray.push(`現金人數${dCash}人。`);
+            textArray.push(`簽名人數${dSign}人。`);
+            textArray.push(`卷人數${dCoupon}人。`);
+            textArray.push(`當日全部總計${gTotal}元。`);
 
             copyToClipboard(textArray.join('\n'));
         }
@@ -575,7 +624,10 @@
                         <div class="summary-item"><span class="summary-label">卷人數</span><span class="summary-val">${dayCoupon}</span></div>
                         <div class="summary-item" style="grid-column: span 2; border-top: 1px solid #444; padding-top: 10px; margin-top: 5px;"><span class="summary-label">當日總業績</span><span class="summary-val" style="color:var(--green)">$${dayTotalAmt}</span></div>
                     </div>
-                    <button class="btn-del" style="width:100%; margin-top:15px;" onclick="deleteHistoryDay(${dayIndex})">刪除此日紀錄</button>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn-action" style="flex: 1; margin-bottom: 0; background: var(--blue);" onclick="copyHistoryDayText(${dayIndex})">📋 複製當日</button>
+                        <button class="btn-action" style="flex: 1; margin-bottom: 0; background: var(--red);" onclick="deleteHistoryDay(${dayIndex})">🗑️ 刪除紀錄</button>
+                    </div>
                 </div>`;
             }).join('');
             document.getElementById('reportArea').innerHTML = html || '此月份暫無歷史紀錄';
@@ -737,10 +789,18 @@
 
         function updateSettleAndList() {
             let gTotal = 0, gSettle = 0;
+            let dPersons = 0, dCash = 0, dSign = 0, dCoupon = 0;
+            
             document.getElementById('settleBody').innerHTML = staffData.filter(s=>s.logs.length>0).map(s=>{
                 let sSum=0, bSum=0, tAmt=0;
                 s.logs.forEach(l=>{ 
                     if(l.isPri) return; 
+                    
+                    dPersons++;
+                    if(l.isP) dSign++;
+                    else if(l.isC) dCoupon++;
+                    else dCash++;
+
                     tAmt += l.amt; 
                     let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0; 
                     let rate = l.otherC ? (l.otherRate / 100) : 0.7;
@@ -752,7 +812,19 @@
                 const curS = isBoss ? bSum : sSum; gTotal += tAmt; gSettle += curS;
                 return `<div onclick="showL(${s.id})" style="background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span>${s.id > 0 ? getStaffDisplayName(s.id) : getSpecialName(s.id)}</span><span style="color:var(--green);font-weight:bold;">總計 ${tAmt} 結算 ${curS}</span></div>`;
             }).join('');
-            document.getElementById('settleGrandTotal').innerHTML = `<div style="padding:20px;background:#2c2c2e;border-radius:15px;margin-top:15px;border:1.5px solid var(--purple);"><span>總計：$${gTotal} / 結算：$${gSettle}</span></div>`;
+            
+            document.getElementById('settleGrandTotal').innerHTML = `
+                <div class="summary-box" style="margin-top:15px; border-color:var(--purple); background:#2c2c2e;">
+                    <div class="summary-item"><span class="summary-label">來店總人數</span><span class="summary-val">${dPersons}</span></div>
+                    <div class="summary-item"><span class="summary-label">現金人數</span><span class="summary-val">${dCash}</span></div>
+                    <div class="summary-item"><span class="summary-label">簽名人數</span><span class="summary-val">${dSign}</span></div>
+                    <div class="summary-item"><span class="summary-label">卷人數</span><span class="summary-val">${dCoupon}</span></div>
+                    <div class="summary-item" style="grid-column: span 2; border-top: 1px solid #444; padding-top: 10px; margin-top: 5px;">
+                        <span class="summary-label">總計 / 結算</span>
+                        <span class="summary-val" style="color:var(--green)">$${gTotal} / $${gSettle}</span>
+                    </div>
+                </div>`;
+            
             const allB = []; staffData.forEach(s => s.bookings.forEach(b => allB.push({...b, sid:s.id})));
             allB.sort((a,b)=> (new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
             document.getElementById('fullBookList').innerHTML = allB.map(b => `<div style="background:#222;padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span>${b.date} <b>${b.time}</b> | ${b.sid > 0 ? getStaffDisplayName(b.sid) : getSpecialName(b.sid)} (${b.dur}分)${b.amt > 0 ? ' [有設金額]' : ''}</span><div><button onclick="editB(${b.sid},${b.id})" class="btn-edit">改</button><button onclick="delB(${b.sid},${b.id})" class="btn-del">刪</button></div></div>`).join('');
