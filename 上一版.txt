@@ -691,10 +691,8 @@
                 if (s) s.bookings.forEach(b => spReqs.push({...b, spId}));
             });
             
+            // 嚴格修正：依照指定不指定順序拉平，全依照時間先後來排序
             spReqs.sort((a,b) => {
-                const aPri = (a.spId === -1 || a.spId === -2) ? 1 : 0;
-                const bPri = (b.spId === -1 || b.spId === -2) ? 1 : 0;
-                if (aPri !== bPri) return bPri - aPri; 
                 return a.time.localeCompare(b.time);   
             });
 
@@ -710,12 +708,18 @@
                     const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                     return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
                 });
+                
                 const targetSid = candidates.find(s => {
+                    // 新增功能：若師傅當前正在工作中，嚴格略過他們，不指派任何新的暫定標籤給他們
+                    const isBusyNow = s.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[s.id] && tentDetailsForStaff[s.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
+                    if (isBusyNow) return false;
+
                     if (req.spId === -1 && getStaffGender(s.id) !== 'male') return false;
                     if (req.spId === -2 && getStaffGender(s.id) !== 'female') return false;
                     const hasConflict = s.bookings.some(b => { const bS = new Date(`${b.date}T${b.time}`).getTime(); const bE = bS + (b.dur * 60000); return (reqStart < bE && reqEnd > bS); }) || (tentDetailsForStaff[s.id] && tentDetailsForStaff[s.id].some(t => { const tS = new Date(`${t.date}T${t.time}`).getTime(); const tE = tS + (t.dur * 60000); return (reqStart < tE && reqEnd > tS); }));
                     return !hasConflict;
                 });
+                
                 if (targetSid) { if (!tentDetailsForStaff[targetSid.id]) tentDetailsForStaff[targetSid.id] = []; tentDetailsForStaff[targetSid.id].push(req); }
             });
 

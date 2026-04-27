@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>排班與業績管理系統-擴充版</title>
+    <title>排班與業績管理系統</title>
     <style>
         :root { --blue: #007AFF; --red: #ff3b30; --green: #30d158; --bg: #000; --card: #1c1c1e; --purple: #af52de; --orange: #ff9500; --yellow: #ffcc00; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; user-select: none; font-size: 20px; font-weight: 300; }
@@ -104,14 +104,20 @@
                     <button class="tag-btn" style="width:40px; font-size:18px; border-radius:0 10px 10px 0; background:#444;" onclick="editOtherRate()">⚙️</button>
                 </div>
             </div>
-            <input type="number" id="bookAmt" class="input-dark" placeholder="輸入預計金額 (例如: 700)">
+            <input type="number" id="bookAmt" class="input-dark" placeholder="輸入預計金額 (例如: 800)">
             <input type="text" id="bookNote" class="input-dark" placeholder="備註 (例如: 指名客)">
             <button class="btn-action" style="background:var(--blue)" onclick="addB()">確認登記預約</button>
             <button id="cancelBookBtn" class="btn-action" style="background:none; color:#888; display:none;" onclick="cancelEditB()">不做變更並關閉</button>
         </div>
     </div>
 
-    <div id="page-list" class="page"><h3>📅 行程表</h3><div id="fullBookList"></div></div>
+    <div id="page-list" class="page">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">📅 行程表</h3>
+            <input type="date" id="listDate" style="background:#222; color:#fff; border:1px solid #444; padding:8px 10px; border-radius:10px; font-size:18px; outline:none;" onchange="render()">
+        </div>
+        <div id="fullBookList" style="margin-top: 15px;"></div>
+    </div>
 
     <div id="page-settle" class="page">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -129,7 +135,7 @@
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active" id="nav-rank" onclick="showPage('page-rank')">📋 看板</div>
+        <div class="nav-item active" id="nav-rank" onclick="showPage('page-rank')">📋 排班</div>
         <div class="nav-item" id="nav-staff" onclick="showPage('page-staff')">👤 師傅</div>
         <div class="nav-item" id="nav-book" onclick="showPage('page-book')">⏰ 預約</div>
         <div class="nav-item" id="nav-list" onclick="showPage('page-list')">📅 行程</div>
@@ -167,7 +173,7 @@
                 <button class="tag-btn" style="width:40px; font-size:18px; border-radius:0 10px 10px 0; background:#444;" onclick="editOtherRate()">⚙️</button>
             </div>
         </div>
-        <input type="number" id="matchAmt" class="input-dark" placeholder="輸入預設金額 (例: 700)" style="margin-bottom:15px;">
+        <input type="number" id="matchAmt" class="input-dark" placeholder="輸入預設金額 (例: 800)" style="margin-bottom:15px;">
 
         <button class="btn-action" style="background:var(--blue)" onclick="runMatch()">開始計算空檔</button>
         <div id="matchResults" style="margin-top:10px;"></div>
@@ -264,18 +270,15 @@
                 staffNames[id] = { name: oldName, gender: gender };
             }
         });
-
         const getStaffDisplayName = (id) => staffNames[id] ? staffNames[id].name : id.toString();
         const getStaffGender = (id) => staffNames[id] ? staffNames[id].gender : 'male';
         const getMaleIds = () => staffIds.filter(id => getStaffGender(id) === 'male');
         const getFemaleIds = () => staffIds.filter(id => getStaffGender(id) === 'female');
-
         let staffData = JSON.parse(localStorage.getItem('massageData')) || [];
         let historyData = JSON.parse(localStorage.getItem('massageHistory')) || [];
 
         const allPossibleIds = [...staffIds, 0, -1, -2];
         staffData = allPossibleIds.map(id => staffData.find(s=>s.id===id) || {id, inRank:false, joinTime:0, bookings:[], logs:[]});
-
         const getTW = () => {
             const now = new Date();
             const formatter = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
@@ -283,9 +286,8 @@
             const map = {}; parts.forEach(p => map[p.type] = p.value);
             return new Date(`${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}:${map.second}`);
         };
-
         const save = () => { 
-            localStorage.setItem('massageData', JSON.stringify(staffData)); 
+            localStorage.setItem('massageData', JSON.stringify(staffData));
             localStorage.setItem('massageHistory', JSON.stringify(historyData)); 
             localStorage.setItem('massageStaffNames', JSON.stringify(staffNames));
         };
@@ -302,13 +304,14 @@
         }
 
         const closeM = (m) => { 
-            if(m === 'matchModal') { matchSels = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; }
+            if(m === 'matchModal') { matchSels = [];
+                specialCounts = { "0": 0, "-1": 0, "-2": 0 };
+            }
             const el = document.getElementById(m);
             if(el) el.style.display='none'; 
             render();
         };
         const showT = (m) => { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('active'); setTimeout(()=>t.classList.remove('active'),2000); };
-
         function updateOtherRateUI() {
             document.querySelectorAll('.other-rate-disp').forEach(el => el.innerText = savedOtherRate);
         }
@@ -369,9 +372,17 @@
                     else dCash++;
 
                     tAmt += l.amt; 
-                    let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0;
+                    
+                    let oil = 0;
+                    let baseAmt = l.amt;
+                    if (l.oilS || l.oilB) {
+                        oil = Math.floor(l.amt / 450) * 50;
+                        baseAmt = l.amt - oil;
+                    }
+                    
                     let rate = l.otherC ? (l.otherRate / 100) : 0.7;
-                    let sP = Math.round(l.amt * rate), bP = l.amt - sP;
+                    let sP = Math.round(baseAmt * rate), bP = baseAmt - sP;
+                    
                     if(l.oilS) sSum += (sP + oil); else sSum += sP;
                     if(l.oilB) bSum += (bP + oil); else bSum += bP;
                     if(l.isP || l.isC) bSum -= l.amt;
@@ -397,7 +408,6 @@
             const selMonth = document.getElementById('reportMonth').value;
             const monthPrefix = `${selYear}-${selMonth}`;
             const monthLogs = historyData.filter(h => h.date.startsWith(monthPrefix));
-
             if (monthLogs.length === 0) {
                 showT('此月份無資料可複製');
                 return;
@@ -406,7 +416,6 @@
             const summary = {};
             let grandTotal = 0;
             let totalPersons = 0, totalCash = 0, totalSign = 0, totalCoupon = 0;
-
             monthLogs.forEach(day => {
                 day.records.forEach(r => {
                     if (!summary[r.id]) summary[r.id] = { total: 0 };
@@ -432,7 +441,6 @@
                 grandTotal += data.total;
                 textArray.push(`師傅${name}號，總計${data.total}。`);
             });
-            
             textArray.push(`本月統計數據如下：`);
             textArray.push(`來店總人數${totalPersons}人。`);
             textArray.push(`現金總人數${totalCash}人。`);
@@ -449,7 +457,6 @@
             let textArray = [`${day.date} 業績結算。`];
             let gTotal = 0;
             let dPersons = 0, dCash = 0, dSign = 0, dCoupon = 0;
-            
             day.records.forEach(r => {
                 const filteredLogs = r.fullLogs ? r.fullLogs.filter(l => !l.isPri) : [];
                 const filteredTotal = filteredLogs.reduce((sum, l) => sum + l.amt, 0);
@@ -484,7 +491,8 @@
             const now = getTW();
             for (let i = 2024; i <= 2030; i++) { const opt = new Option(i + ' 年', i); ySel.add(opt); }
             for (let i = 1; i <= 12; i++) { const opt = new Option(i + ' 月', String(i).padStart(2, '0')); mSel.add(opt); }
-            ySel.value = now.getFullYear(); mSel.value = String(now.getMonth() + 1).padStart(2, '0');
+            ySel.value = now.getFullYear();
+            mSel.value = String(now.getMonth() + 1).padStart(2, '0');
         }
 
         function saveToHistory() {
@@ -541,7 +549,7 @@
                 const data = summary[id];
                 const name = id > 0 ? getStaffDisplayName(id) : getSpecialName(Number(id));
                 const desRate = data.total > 0 ? Math.round((data.des / data.total) * 100) : 0;
-                const units = data.total > 0 ? (data.total / 700).toFixed(1) : 0;
+                const units = data.total > 0 ? (data.total / 800).toFixed(1) : 0;
                 grandTotal += data.total;
                 html += `<tr><td><b>${name}</b></td><td style="color:var(--green);">$${data.total}</td><td>${desRate}%</td><td style="color:var(--orange);">${units}</td></tr>`;
             });
@@ -561,11 +569,9 @@
             const selYear = document.getElementById('reportYear').value;
             const selMonth = document.getElementById('reportMonth').value;
             const monthPrefix = `${selYear}-${selMonth}`;
-            
             let filteredHistory = historyData.map((h, originalIndex) => ({...h, originalIndex}))
                                            .filter(h => h.date.startsWith(monthPrefix))
                                            .reverse();
-
             let html = filteredHistory.map((day) => {
                 const dayIndex = day.originalIndex;
                 let dayPersons = 0, dayTotalAmt = 0, dayDes = 0, dayCash = 0, daySign = 0, dayCoupon = 0;
@@ -576,7 +582,7 @@
                     
                     const name = r.id > 0 ? getStaffDisplayName(r.id) : getSpecialName(r.id);
                     const desRate = filteredTotal > 0 ? Math.round((filteredDes / filteredTotal) * 100) : 0;
-                    const units = filteredTotal > 0 ? (filteredTotal / 700).toFixed(1) : 0;
+                    const units = filteredTotal > 0 ? (filteredTotal / 800).toFixed(1) : 0;
                     const uid = `h-${dayIndex}-${rIdx}`;
                     dayTotalAmt += filteredTotal;
                     
@@ -594,7 +600,7 @@
                         if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
                         if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`);
                         const timeTag = l.time ? `<span style="color:#888; font-size:14px; margin-left:15px;">${l.time}</span>` : '';
-                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}${timeTag}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button></div>`;
+                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}${timeTag}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><div style="display:flex; gap:5px;"><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button><button class="btn-del" onclick="event.stopPropagation(); deleteHistoryLog(${dayIndex}, ${rIdx}, ${lIdx})">刪</button></div></div>`;
                     }).join('') : '';
 
                     return `
@@ -642,7 +648,7 @@
             document.getElementById('he_amt').value = tempHE.amt;
             ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri', 'otherC'].forEach(k => { 
                 const target = k === 'isD' ? 'he_isD' : (k === 'isPri' ? 'he_isPri' : 'he_'+k); 
-                const btn = document.getElementById(target); 
+                const btn = document.getElementById(target);
                 if(btn) btn.classList.toggle('tag-active', !!tempHE[k]); 
             });
             document.getElementById('historyEditModal').style.display = 'flex';
@@ -652,7 +658,7 @@
             if(k==='oilS'){ tempHE.oilS=!tempHE.oilS; if(tempHE.oilS) tempHE.oilB=false; }
             else if(k==='oilB'){ tempHE.oilB=!tempHE.oilB; if(tempHE.oilB) tempHE.oilS=false; }
             else if(k==='otherC'){ 
-                tempHE.otherC = !tempHE.otherC; 
+                tempHE.otherC = !tempHE.otherC;
                 if(tempHE.otherC) tempHE.otherRate = savedOtherRate; 
             }
             else { tempHE[k]=!tempHE[k]; }
@@ -668,8 +674,23 @@
             tempHE.amt = parseInt(document.getElementById('he_amt').value) || 0;
             const { d, r, l, isLive } = activeHE;
             if (isLive) { staffData.find(s=>s.id===d).logs[l] = tempHE; closeM('logModal'); } 
-            else { historyData[d].records[r].fullLogs[l] = tempHE; const logs = historyData[d].records[r].fullLogs; historyData[d].records[r].totalAmt = logs.reduce((s, x) => s + x.amt, 0); historyData[d].records[r].desAmt = logs.filter(x => x.isD).reduce((s, x) => s + x.amt, 0); renderHistoryList(); }
+            else { historyData[d].records[r].fullLogs[l] = tempHE;
+                const logs = historyData[d].records[r].fullLogs; historyData[d].records[r].totalAmt = logs.reduce((s, x) => s + x.amt, 0);
+                historyData[d].records[r].desAmt = logs.filter(x => x.isD).reduce((s, x) => s + x.amt, 0); renderHistoryList();
+            }
             save(); closeM('historyEditModal'); render(); showT('修正成功');
+        }
+
+        function deleteHistoryLog(d, r, l) {
+            if (confirm('確定刪除此筆明細？')) {
+                historyData[d].records[r].fullLogs.splice(l, 1);
+                const logs = historyData[d].records[r].fullLogs;
+                historyData[d].records[r].totalAmt = logs.reduce((s, x) => s + x.amt, 0);
+                historyData[d].records[r].desAmt = logs.filter(x => x.isD).reduce((s, x) => s + x.amt, 0);
+                save();
+                renderHistoryList();
+                showT('已刪除明細');
+            }
         }
 
         function deleteHistoryDay(idx) { if (confirm('確定刪除？')) { historyData.splice(idx, 1); save(); renderHistoryList(); } }
@@ -685,15 +706,18 @@
             if(document.getElementById('modeBtn')) document.getElementById('modeBtn').innerText = isBoss ? '切換師傅' : '切換店內';
             
             const tentativeMap = {}; 
-            const spReqs = []; 
+            const spReqs = [];
             specialIds.forEach(spId => {
                 const s = staffData.find(x => x.id === spId);
                 if (s) s.bookings.forEach(b => spReqs.push({...b, spId}));
             });
             
-            // 嚴格修正：依照指定不指定順序拉平，全依照時間先後來排序
+            // 修正排班邏輯核心：優先處理有指定條件（指男、指女）的預約，接著才是比時間
             spReqs.sort((a,b) => {
-                return a.time.localeCompare(b.time);   
+                const aSpec = a.spId !== 0 ? 1 : 0;
+                const bSpec = b.spId !== 0 ? 1 : 0;
+                if (aSpec !== bSpec) return bSpec - aSpec; // 條件嚴格的優先分配
+                return a.time.localeCompare(b.time); // 其次依時間順序排
             });
 
             const tentDetailsForStaff = {}; 
@@ -701,33 +725,26 @@
                 const reqStart = new Date(`${req.date}T${req.time}`).getTime();
                 const reqEnd = reqStart + (req.dur * 60000);
                 const candidates = staffData.filter(s => s.inRank && s.id > 0).sort((a,b) => {
-                    const aBusy = a.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
-                    const bBusy = b.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
-                    if (aBusy && !bBusy) return 1; 
+                    const aBusy = a.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs < (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs < (sMs + (t.dur * 60000)); }));
+                    const bBusy = b.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs < (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs < (sMs + (t.dur * 60000)); }));
+                    if (aBusy && !bBusy) return 1;
                     if (!aBusy && bBusy) return -1; 
                     const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
                     return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
                 });
-                
                 const targetSid = candidates.find(s => {
-                    // 新增功能：若師傅當前正在工作中，嚴格略過他們，不指派任何新的暫定標籤給他們
-                    const isBusyNow = s.bookings.some(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[s.id] && tentDetailsForStaff[s.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
-                    if (isBusyNow) return false;
-
                     if (req.spId === -1 && getStaffGender(s.id) !== 'male') return false;
                     if (req.spId === -2 && getStaffGender(s.id) !== 'female') return false;
                     const hasConflict = s.bookings.some(b => { const bS = new Date(`${b.date}T${b.time}`).getTime(); const bE = bS + (b.dur * 60000); return (reqStart < bE && reqEnd > bS); }) || (tentDetailsForStaff[s.id] && tentDetailsForStaff[s.id].some(t => { const tS = new Date(`${t.date}T${t.time}`).getTime(); const tE = tS + (t.dur * 60000); return (reqStart < tE && reqEnd > tS); }));
                     return !hasConflict;
                 });
-                
                 if (targetSid) { if (!tentDetailsForStaff[targetSid.id]) tentDetailsForStaff[targetSid.id] = []; tentDetailsForStaff[targetSid.id].push(req); }
             });
-
             let changed = false;
             staffData.forEach(s => {
                 s.bookings = s.bookings.filter(b => {
                     const eMs = new Date(`${b.date}T${b.time}`).getTime() + (b.dur * 60000);
-                    if (nowMs > eMs) {
+                    if (nowMs >= eMs) {
                         if (b.amt > 0) {
                             let log = { amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC, isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri, otherC: b.otherC, otherRate: b.otherRate, time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}` };
                             if (s.id <= 0) {
@@ -746,10 +763,10 @@
 
             const rA = document.getElementById('rankArea'); rA.innerHTML = '';
             const rankedStaff = staffData.filter(s=>s.inRank && s.id > 0).sort((a,b)=>{ 
-                const aBusy = a.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
-                const bBusy = b.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs <= (sMs + (t.dur * 60000)); }));
+                const aBusy = a.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs < (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[a.id] && tentDetailsForStaff[a.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs < (sMs + (t.dur * 60000)); }));
+                const bBusy = b.bookings.find(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); return nowMs >= sMs && nowMs < (sMs + (b.dur * 60000)); }) || (tentDetailsForStaff[b.id] && tentDetailsForStaff[b.id].some(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); return nowMs >= sMs && nowMs < (sMs + (t.dur * 60000)); }));
                 if (aBusy && !bBusy) return 1; if (!aBusy && bBusy) return -1;
-                const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0); 
+                const aI=a.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0), bI=b.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0);
                 return aI!==bI ? aI-bI : a.joinTime-b.joinTime; 
             }).slice(0, 20);
 
@@ -757,18 +774,19 @@
             const itemHeight = count <= 6 ? 100 : Math.max(60, 520 / count);
             rankedStaff.forEach((s,i)=>{
                 const allUpcoming = [];
-                s.bookings.forEach(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); const eMs = sMs + (b.dur * 60000); if (eMs > nowMs) allUpcoming.push({ ...b, type: 'real', sMs, eMs }); });
-                if (tentDetailsForStaff[s.id]) { tentDetailsForStaff[s.id].forEach(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); const eMs = sMs + (t.dur * 60000); if (eMs > nowMs) allUpcoming.push({ ...t, type: 'tentative', sMs, eMs }); }); }
+                s.bookings.forEach(b => { const sMs = new Date(`${b.date}T${b.time}`).getTime(); const eMs = sMs + (b.dur * 60000); if (eMs > nowMs && b.date === dateS) allUpcoming.push({ ...b, type: 'real', sMs, eMs }); });
+                if (tentDetailsForStaff[s.id]) { tentDetailsForStaff[s.id].forEach(t => { const sMs = new Date(`${t.date}T${t.time}`).getTime(); const eMs = sMs + (t.dur * 60000); if (eMs > nowMs && t.date === dateS) allUpcoming.push({ ...t, type: 'tentative', sMs, eMs }); }); }
                 allUpcoming.sort((a, b) => a.sMs - b.sMs);
                 let displayHtml = '';
                 const nextTwo = allUpcoming.slice(0, 2);
                 if (nextTwo.length === 0) { displayHtml = '<span class="b-text">現場</span>'; } else {
-                    nextTwo.forEach(item => { const isBusyNow = nowMs >= item.sMs && nowMs <= item.eMs; const endObj = new Date(item.eMs); const endT = `${String(endObj.getHours()).padStart(2,'0')}:${String(endObj.getMinutes()).padStart(2,'0')}`;
+                    nextTwo.forEach(item => { const isBusyNow = nowMs >= item.sMs && nowMs < item.eMs; const endObj = new Date(item.eMs); const endT = `${String(endObj.getHours()).padStart(2,'0')}:${String(endObj.getMinutes()).padStart(2,'0')}`;
                         if (isBusyNow) { displayHtml += `<div class="busy-text">${endT} 結束</div>`; } else { displayHtml += `<div class="${item.type === 'tentative' ? 'tentative-text' : 'b-text'}">${item.time} (${item.dur}分) ${item.type === 'tentative' ? '暫定' : ''}</div>`; }
                     });
                 }
-                const div = document.createElement('div'); div.className='rank-item'; div.style.top=(i*itemHeight)+'px'; div.style.height = (itemHeight - 5) + 'px'; 
-                const hasBusy = nextTwo.some(item => nowMs >= item.sMs && nowMs <= item.eMs);
+                const div = document.createElement('div');
+                div.className='rank-item'; div.style.top=(i*itemHeight)+'px'; div.style.height = (itemHeight - 5) + 'px'; 
+                const hasBusy = nextTwo.some(item => nowMs >= item.sMs && nowMs < item.eMs);
                 const hasTentative = nextTwo.some(item => item.type === 'tentative' && nowMs < item.sMs);
                 div.style.borderColor = hasBusy ? 'var(--red)' : (hasTentative ? 'var(--yellow)' : 'var(--green)');
                 div.onclick=()=>{ selIds=[s.id]; document.getElementById('actTitle').innerText=getStaffDisplayName(s.id); resetModes(); document.getElementById('actModal').style.display='flex'; };
@@ -776,7 +794,6 @@
                 div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:28px;margin-right:15px;font-weight:bold;width:60px;overflow:hidden;">${getStaffDisplayName(s.id)}${gMarker}</span><div style="display:flex; flex-direction:column; gap:1px;">${displayHtml}</div></div><b style="font-size:26px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
                 rA.appendChild(div);
             });
-
             document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=> `<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${getStaffDisplayName(s.id)}<span style="font-size:12px; opacity:0.6; display:block;">${getStaffGender(s.id) === 'male' ? '♂' : '♀'}</span></div>`).join('');
             document.getElementById('bookStaffSpecial').innerHTML = specialIds.map(id => { const c = specialCounts[id]; return `<div class="staff-btn staff-btn-sm ${c > 0 ? 'active' : ''}" style="position:relative;" onclick="openPerson(${id})">${getSpecialName(id)}${c > 0 ? `<div class="count-badge">${c}</div>` : ''}</div>`; }).join('');
             let selText = []; selIds.forEach(id => selText.push(getStaffDisplayName(id))); specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
@@ -785,16 +802,24 @@
             updateSettleAndList();
         }
 
-        function renameStaff(id) { const oldName = getStaffDisplayName(id); const newName = prompt(`修改 ${oldName} 的顯示名稱：`, oldName); if(newName !== null && newName.trim() !== "") { renamingStaffId = id; staffNames[id].name = newName.trim(); document.getElementById('genderTitle').innerText = `設定 ${newName.trim()} 的性別`; document.getElementById('genderModal').style.display = 'flex'; } }
-        function setStaffGender(gender) { if(renamingStaffId && staffNames[renamingStaffId]) { staffNames[renamingStaffId].gender = gender; save(); closeM('genderModal'); renamingStaffId = null; showT('資料已更新'); } }
-        function openPerson(id) { tempSpecId = id; document.getElementById('personTitle').innerText = `選擇「${getSpecialName(id)}」人數`; document.getElementById('personModal').style.display = 'flex'; }
-        function setPersonCount(count) { specialCounts[tempSpecId] = count; closeM('personModal'); if(document.getElementById('matchModal').style.display==='flex'){ const target = document.getElementById('m-'+tempSpecId); if(target) { target.classList.toggle('selected', specialCounts[tempSpecId]>0); const badge = target.querySelector('.count-badge'); if(badge) badge.innerText = count; else if(count>0) target.innerHTML += `<div class="count-badge">${count}</div>`; if(count === 0 && badge) badge.remove(); } } render(); }
-        function tBookSel(id) { const idx = selIds.indexOf(id); if(idx > -1) selIds.splice(idx, 1); else selIds.push(id); render(); }
+        function renameStaff(id) { const oldName = getStaffDisplayName(id);
+            const newName = prompt(`修改 ${oldName} 的顯示名稱：`, oldName); if(newName !== null && newName.trim() !== "") { renamingStaffId = id;
+            staffNames[id].name = newName.trim(); document.getElementById('genderTitle').innerText = `設定 ${newName.trim()} 的性別`; document.getElementById('genderModal').style.display = 'flex';
+            } }
+        function setStaffGender(gender) { if(renamingStaffId && staffNames[renamingStaffId]) { staffNames[renamingStaffId].gender = gender; save();
+            closeM('genderModal'); renamingStaffId = null; showT('資料已更新'); } }
+        function openPerson(id) { tempSpecId = id;
+            document.getElementById('personTitle').innerText = `選擇「${getSpecialName(id)}」人數`; document.getElementById('personModal').style.display = 'flex'; }
+        function setPersonCount(count) { specialCounts[tempSpecId] = count;
+            closeM('personModal'); if(document.getElementById('matchModal').style.display==='flex'){ const target = document.getElementById('m-'+tempSpecId); if(target) { target.classList.toggle('selected', specialCounts[tempSpecId]>0); const badge = target.querySelector('.count-badge'); if(badge) badge.innerText = count;
+            else if(count>0) target.innerHTML += `<div class="count-badge">${count}</div>`; if(count === 0 && badge) badge.remove(); } } render();
+        }
+        function tBookSel(id) { const idx = selIds.indexOf(id); if(idx > -1) selIds.splice(idx, 1);
+            else selIds.push(id); render(); }
 
         function updateSettleAndList() {
             let gTotal = 0, gSettle = 0;
             let dPersons = 0, dCash = 0, dSign = 0, dCoupon = 0;
-            
             document.getElementById('settleBody').innerHTML = staffData.filter(s=>s.logs.length>0).map(s=>{
                 let sSum=0, bSum=0, tAmt=0;
                 s.logs.forEach(l=>{ 
@@ -806,17 +831,25 @@
                     else dCash++;
 
                     tAmt += l.amt; 
-                    let oil = (l.oilS || l.oilB) ? Math.round((l.amt/700)*100) : 0; 
+                    
+                    let oil = 0;
+                    let baseAmt = l.amt;
+                    if (l.oilS || l.oilB) {
+                        oil = Math.floor(l.amt / 450) * 50;
+                        baseAmt = l.amt - oil;
+                    }
+                    
                     let rate = l.otherC ? (l.otherRate / 100) : 0.7;
-                    let sP = Math.round(l.amt * rate), bP = l.amt - sP; 
+                    let sP = Math.round(baseAmt * rate), bP = baseAmt - sP; 
+                    
                     if(l.oilS) sSum += (sP + oil); else sSum += sP; 
-                    if(l.oilB) bSum += (bP + oil); else bSum += bP; 
+                    if(l.oilB) bSum += (bP + oil); else bSum += bP;
                     if(l.isP || l.isC) bSum -= l.amt; 
                 });
-                const curS = isBoss ? bSum : sSum; gTotal += tAmt; gSettle += curS;
+                const curS = isBoss ? bSum : sSum; gTotal += tAmt;
+                gSettle += curS;
                 return `<div onclick="showL(${s.id})" style="background:var(--card);padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span>${s.id > 0 ? getStaffDisplayName(s.id) : getSpecialName(s.id)}</span><span style="color:var(--green);font-weight:bold;">總計 ${tAmt} 結算 ${curS}</span></div>`;
             }).join('');
-            
             document.getElementById('settleGrandTotal').innerHTML = `
                 <div class="summary-box" style="margin-top:15px; border-color:var(--purple); background:#2c2c2e;">
                     <div class="summary-item"><span class="summary-label">來店總人數</span><span class="summary-val">${dPersons}</span></div>
@@ -828,14 +861,24 @@
                         <span class="summary-val" style="color:var(--green)">$${gTotal} / $${gSettle}</span>
                     </div>
                 </div>`;
-            
-            const allB = []; staffData.forEach(s => s.bookings.forEach(b => allB.push({...b, sid:s.id})));
+            const listDate = document.getElementById('listDate').value;
+            const allB = []; 
+            staffData.forEach(s => {
+                s.bookings.forEach(b => {
+                    if (b.date === listDate) {
+                        allB.push({...b, sid:s.id});
+                    }
+                });
+            });
             allB.sort((a,b)=> (new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
-            document.getElementById('fullBookList').innerHTML = allB.map(b => `<div style="background:#222;padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span>${b.date} <b>${b.time}</b> | ${b.sid > 0 ? getStaffDisplayName(b.sid) : getSpecialName(b.sid)} (${b.dur}分)${b.amt > 0 ? ' [有設金額]' : ''}</span><div><button onclick="editB(${b.sid},${b.id})" class="btn-edit">改</button><button onclick="delB(${b.sid},${b.id})" class="btn-del">刪</button></div></div>`).join('');
+            
+            document.getElementById('fullBookList').innerHTML = allB.length > 0 ?
+            allB.map(b => `<div style="background:#222;padding:15px;border-radius:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span>${b.date} <b>${b.time}</b> | ${b.sid > 0 ? getStaffDisplayName(b.sid) : getSpecialName(b.sid)} (${b.dur}分)${b.amt > 0 ? ' [有設金額]' : ''}</span><div><button onclick="editB(${b.sid},${b.id})" class="btn-edit">改</button><button onclick="delB(${b.sid},${b.id})" class="btn-del">刪</button></div></div>`).join('') : '<div style="text-align:center; color:#888; margin-top:20px;">當日無預約行程</div>';
         }
 
         function showL(id){
-            selIds=[id]; const s=staffData.find(x=>x.id===id); 
+            selIds=[id];
+            const s=staffData.find(x=>x.id===id); 
             document.getElementById('logTitle').innerText = (id > 0 ? getStaffDisplayName(id) : getSpecialName(id))+'今日明細';
             document.getElementById('logList').innerHTML = s.logs.map((l,i)=>{
                 let tags = []; if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]'); if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`);
@@ -850,95 +893,143 @@
             let availablePool = realStaff.filter(s => { const isBusy = s.bookings.some(b => { if (editBookId && b.id === editBookId) return false; const bS = new Date(`${b.date}T${b.time}`).getTime(); const bE = bS + (b.dur * 60000); return (startMs < bE && endMs > bS); }); return !isBusy; });
             let reqM = newCounts['-1'] || 0, reqF = newCounts['-2'] || 0, reqA = newCounts['0'] || 0;
             [-1, -2, 0].forEach(spId => { const sp = staffData.find(s => s.id === spId); if (sp) { const overlaps = sp.bookings.filter(b => { if (editBookId && b.id === editBookId) return false; const bS = new Date(`${b.date}T${b.time}`).getTime(); const bE = bS + (b.dur * 60000); return (startMs < bE && endMs > bS); }); if (spId === -1) reqM += overlaps.length; if (spId === -2) reqF += overlaps.length; if (spId === 0) reqA += overlaps.length; } });
-            for (let sid of selStaffIds) { const idx = availablePool.findIndex(s => s.id === sid); if (idx === -1) return false; availablePool.splice(idx, 1); }
+            for (let sid of selStaffIds) { const idx = availablePool.findIndex(s => s.id === sid); if (idx === -1) return false;
+            availablePool.splice(idx, 1); }
             let aM = availablePool.filter(s => getStaffGender(s.id) === 'male').length, aF = availablePool.filter(s => getStaffGender(s.id) === 'female').length;
             return aM >= reqM && aF >= reqF && (availablePool.length - reqM - reqF) >= reqA;
         }
 
         function addB(fT = null, fD = null, mIds = null){
-            const d=document.getElementById('bookDate').value, t=fT || document.getElementById('bookTime').value, du=fD || parseInt(document.getElementById('bookDur').value), nt=document.getElementById('bookNote').value;
-            const activeMode = fT ? matchMode : bookMode, activeAmt = fT ? (parseInt(document.getElementById('matchAmt').value) || 0) : (parseInt(document.getElementById('bookAmt').value) || 0);
-            const aS = specialIds.filter(id => specialCounts[id] > 0); let tIds = mIds ? mIds : selIds;
+            const d=document.getElementById('bookDate').value, t=fT ||
+            document.getElementById('bookTime').value, du=fD || parseInt(document.getElementById('bookDur').value), nt=document.getElementById('bookNote').value;
+            const activeMode = fT ? matchMode : bookMode, activeAmt = fT ?
+            (parseInt(document.getElementById('matchAmt').value) || 0) : (parseInt(document.getElementById('bookAmt').value) || 0);
+            const aS = specialIds.filter(id => specialCounts[id] > 0); let tIds = mIds ?
+            mIds : selIds;
             if(tIds.length===0 && aS.length===0) return alert('請選取號碼或人數'); if(!t) return alert('請填寫時間');
             const start = new Date(`${d}T${t}`).getTime(), end = start + (du * 60000);
             if (!checkAvailability(start, end, tIds, specialCounts)) return alert('時段衝突！該時段人力不足或指定師傅忙碌/未上班。');
             if(editBookId !== null) staffData.forEach(s => { s.bookings = s.bookings.filter(b => b.id !== editBookId); });
-            const bData = { id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt, amt: activeAmt, isD: activeMode.des, isP: activeMode.sign, isC: activeMode.coupon, isExtra: activeMode.extra, oilS: activeMode.oilS, oilB: activeMode.oilB, isPri: activeMode.private, otherC: activeMode.otherC, otherRate: activeMode.otherC ? savedOtherRate : null };
+            const bData = { id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt, amt: activeAmt, isD: activeMode.des, isP: activeMode.sign, isC: activeMode.coupon, isExtra: activeMode.extra, oilS: activeMode.oilS, oilB: activeMode.oilB, isPri: activeMode.private, otherC: activeMode.otherC, otherRate: activeMode.otherC ?
+            savedOtherRate : null };
             tIds.forEach(sid => { staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
             aS.forEach(sid => { for(let i=0; i<specialCounts[sid]; i++) staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
-            editBookId = null; document.getElementById('cancelBookBtn').style.display='none'; document.getElementById('bookNote').value = ''; document.getElementById('bookAmt').value = '';
-            selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; resetBookMode(); save(); render(); showT(fT ? '匹配預約成功' : '預約成功');
+            editBookId = null; document.getElementById('cancelBookBtn').style.display='none'; document.getElementById('bookNote').value = '';
+            document.getElementById('bookAmt').value = '';
+            selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; resetBookMode(); save(); render();
+            showT(fT ? '匹配預約成功' : '預約成功');
         }
 
         function openMatch(){
-            matchSels = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; resetMatchMode();
+            matchSels = [];
+            specialCounts = { "0": 0, "-1": 0, "-2": 0 }; resetMatchMode();
             document.getElementById('matchStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=>`<div id="m-${s.id}" class="match-btn-item" onclick="tMatch(${s.id}, false)">${getStaffDisplayName(s.id)}</div>`).join('');
             document.getElementById('matchSpecialGrid').innerHTML = specialIds.map(id => `<div id="m-${id}" class="match-btn-item" onclick="tMatch(${id}, true)">${getSpecialName(id)}</div>`).join('');
-            const mDur = document.getElementById('matchDur'); mDur.innerHTML = ''; for(let i=15; i<=180; i+=15) mDur.innerHTML+=`<option value="${i}">${i} 分鐘</option>`; mDur.value = 60;
-            const sHr = document.getElementById('matchStartHr'), eHr = document.getElementById('matchEndHr'); sHr.innerHTML = ''; eHr.innerHTML = '';
-            for(let i=0; i<24; i++){ let opt=`<option value="${i}">${String(i).padStart(2,'0')}:00</option>`; sHr.innerHTML+=opt; eHr.innerHTML+=opt; }
+            const mDur = document.getElementById('matchDur'); mDur.innerHTML = '';
+            for(let i=15; i<=180; i+=15) mDur.innerHTML+=`<option value="${i}">${i} 分鐘</option>`; mDur.value = 60;
+            const sHr = document.getElementById('matchStartHr'), eHr = document.getElementById('matchEndHr'); sHr.innerHTML = '';
+            eHr.innerHTML = '';
+            for(let i=0; i<24; i++){ let opt=`<option value="${i}">${String(i).padStart(2,'0')}:00</option>`; sHr.innerHTML+=opt; eHr.innerHTML+=opt;
+            }
             sHr.value = getTW().getHours(); eHr.value = 23;
             document.getElementById('matchResults').innerHTML = ''; document.getElementById('matchModal').style.display='flex';
         }
-        function tMatch(id, isSpec){ if(isSpec) openPerson(id); else { const idx = matchSels.indexOf(id); if(idx>-1) matchSels.splice(idx,1); else matchSels.push(id); document.getElementById('m-'+id).classList.toggle('selected', matchSels.includes(id)); } }
+        function tMatch(id, isSpec){ if(isSpec) openPerson(id);
+            else { const idx = matchSels.indexOf(id); if(idx>-1) matchSels.splice(idx,1); else matchSels.push(id); document.getElementById('m-'+id).classList.toggle('selected', matchSels.includes(id));
+            } }
         
         function runMatch(){
-            const aS = specialIds.filter(id => specialCounts[id] > 0); if(matchSels.length===0 && aS.length===0) return alert('請選擇師傅或人數');
+            const aS = specialIds.filter(id => specialCounts[id] > 0);
+            if(matchSels.length===0 && aS.length===0) return alert('請選擇師傅或人數');
             const dur = parseInt(document.getElementById('matchDur').value), resArea = document.getElementById('matchResults'); resArea.innerHTML = '計算中...';
             const sHr = parseInt(document.getElementById('matchStartHr').value), eHr = parseInt(document.getElementById('matchEndHr').value);
             const now = getTW(); let check = new Date(now.getTime());
-            if (check.getHours() < sHr || (check.getHours() === sHr && check.getMinutes() === 0 && check.getTime() < now.getTime())) { check.setHours(sHr, 0, 0, 0); } 
-            else { const m = check.getMinutes(); const r = m % 5; if (r !== 0) { check.setMinutes(m + (5 - r)); } check.setSeconds(0, 0); }
+            if (check.getHours() < sHr || (check.getHours() === sHr && check.getMinutes() === 0 && check.getTime() < now.getTime())) { check.setHours(sHr, 0, 0, 0);
+            } 
+            else { const m = check.getMinutes();
+            const r = m % 5; if (r !== 0) { check.setMinutes(m + (5 - r)); } check.setSeconds(0, 0);
+            }
             let found = []; let safety = 1440;
             while(found.length < 5 && safety > 0){
-                if (check.getHours() >= eHr || check.getDate() !== now.getDate()) { if (!(check.getHours() === eHr && check.getMinutes() === 0)) break; }
-                if(checkAvailability(check.getTime(), check.getTime() + (dur * 60000), matchSels, specialCounts)){ const tStr = `${String(check.getHours()).padStart(2,'0')}:${String(check.getMinutes()).padStart(2,'0')}`; if (!found.includes(tStr)) found.push(tStr); }
-                check.setMinutes(check.getMinutes() + 5); safety--;
+                if (check.getHours() >= eHr || check.getDate() !== now.getDate()) { if (!(check.getHours() === eHr && check.getMinutes() === 0)) break;
+                }
+                if(checkAvailability(check.getTime(), check.getTime() + (dur * 60000), matchSels, specialCounts)){ const tStr = `${String(check.getHours()).padStart(2,'0')}:${String(check.getMinutes()).padStart(2,'0')}`;
+                if (!found.includes(tStr)) found.push(tStr); }
+                check.setMinutes(check.getMinutes() + 5);
+                safety--;
             }
-            resArea.innerHTML = found.length ? found.map(t=>`<div class="result-item"><b>${t} (${dur}分)</b><button onclick="addB('${t}',${dur}, [${matchSels.join(',')}]);closeM('matchModal')" style="background:var(--green);border:none;color:#fff;padding:8px 15px;border-radius:8px;cursor:pointer;">選用</button></div>`).join('') : '此區間無空檔';
+            resArea.innerHTML = found.length ?
+            found.map(t=>`<div class="result-item"><b>${t} (${dur}分)</b><button onclick="addB('${t}',${dur}, [${matchSels.join(',')}]);closeM('matchModal')" style="background:var(--green);border:none;color:#fff;padding:8px 15px;border-radius:8px;cursor:pointer;">選用</button></div>`).join('') : '此區間無空檔';
         }
 
         function editB(sid, bid){
-            const s = staffData.find(x=>x.id===sid); const b = s.bookings.find(x=>x.id===bid); if(!b) return;
-            editBookId = bid; selIds = [sid]; document.getElementById('bookDate').value = b.date; document.getElementById('bookTime').value = b.time; document.getElementById('bookDur').value = b.dur; document.getElementById('bookNote').value = b.note || '';
+            const s = staffData.find(x=>x.id===sid);
+            const b = s.bookings.find(x=>x.id===bid); if(!b) return;
+            editBookId = bid; selIds = [sid]; document.getElementById('bookDate').value = b.date; document.getElementById('bookTime').value = b.time;
+            document.getElementById('bookDur').value = b.dur; document.getElementById('bookNote').value = b.note || '';
             document.getElementById('bookAmt').value = b.amt || '';
             bookMode = {des:!!b.isD, extra:!!b.isExtra, sign:!!b.isP, coupon:!!b.isC, oilS:!!b.oilS, oilB:!!b.oilB, private:!!b.isPri, otherC:!!b.otherC};
             updateBookTags(); document.getElementById('cancelBookBtn').style.display = 'block'; showPage('page-book');
         }
 
-        function cancelEditB(){ editBookId = null; document.getElementById('cancelBookBtn').style.display = 'none'; document.getElementById('bookNote').value = ''; document.getElementById('bookAmt').value = ''; resetBookMode(); showPage('page-list'); }
-        function showPage(p){ if(p !== 'page-book') { selIds = []; specialCounts = { "0": 0, "-1": 0, "-2": 0 }; } document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active', x.id===p)); render(); }
-        function toggleBk(t){ bookMode[t]=!bookMode[t]; updateBookTags(); }
-        function toggleOilBk(t) { if(t==='oilS'){bookMode.oilS=!bookMode.oilS; if(bookMode.oilS)bookMode.oilB=false;} else{bookMode.oilB=!bookMode.oilB; if(bookMode.oilS)bookMode.oilS=false;} updateBookTags(); }
-        function resetBookMode() { bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; updateBookTags(); }
-        function updateBookTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('bk_'+k); if(el) el.style.borderColor=bookMode[k]?'#fff':'transparent'; }); }
-        function toggleMa(t){ matchMode[t]=!matchMode[t]; updateMatchTags(); }
-        function toggleOilMa(t) { if(t==='oilS'){matchMode.oilS=!matchMode.oilS; if(matchMode.oilS)matchMode.oilB=false;} else{matchMode.oilB=!matchMode.oilB; if(matchMode.oilB)matchMode.oilS=false;} updateMatchTags(); }
-        function resetMatchMode() { matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; updateMatchTags(); document.getElementById('matchAmt').value=''; }
-        function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('ma_'+k); if(el) el.style.borderColor=matchMode[k]?'#fff':'transparent'; }); }
-        function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent'; }
-        function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent'); }
-        function resetModes() { mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('m_'+k); if(el) el.style.borderColor='transparent'; }); document.getElementById('customAmt').value = ''; }
-
-        function hAmt(a){ 
-            const amt = parseInt(a); if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
-            const now = getTW(); const timeTag = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            staffData.find(x=>x.id===selIds[0]).logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, otherC:mode.otherC, otherRate:mode.otherC ? savedOtherRate : null, time: timeTag}); 
-            closeM('amtModal'); save(); render(); 
+        function cancelEditB(){ editBookId = null; document.getElementById('cancelBookBtn').style.display = 'none'; document.getElementById('bookNote').value = '';
+            document.getElementById('bookAmt').value = ''; resetBookMode(); showPage('page-list'); }
+        function showPage(p){ if(p !== 'page-book') { selIds = [];
+            specialCounts = { "0": 0, "-1": 0, "-2": 0 }; } document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active', x.id===p)); render();
+        }
+        function toggleBk(t){ bookMode[t]=!bookMode[t]; updateBookTags();
+        }
+        function toggleOilBk(t) { if(t==='oilS'){bookMode.oilS=!bookMode.oilS; if(bookMode.oilS)bookMode.oilB=false;} else{bookMode.oilB=!bookMode.oilB; if(bookMode.oilS)bookMode.oilS=false;} updateBookTags();
+        }
+        function resetBookMode() { bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; updateBookTags();
+        }
+        function updateBookTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('bk_'+k); if(el) el.style.borderColor=bookMode[k]?'#fff':'transparent'; });
+        }
+        function toggleMa(t){ matchMode[t]=!matchMode[t]; updateMatchTags();
+        }
+        function toggleOilMa(t) { if(t==='oilS'){matchMode.oilS=!matchMode.oilS; if(matchMode.oilS)matchMode.oilB=false;} else{matchMode.oilB=!matchMode.oilB; if(matchMode.oilB)matchMode.oilS=false;} updateMatchTags();
+        }
+        function resetMatchMode() { matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; updateMatchTags();
+            document.getElementById('matchAmt').value=''; }
+        function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('ma_'+k); if(el) el.style.borderColor=matchMode[k]?'#fff':'transparent'; });
+        }
+        function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent';
+        }
+        function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent');
+        }
+        function resetModes() { mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false};
+            ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('m_'+k); if(el) el.style.borderColor='transparent'; }); document.getElementById('customAmt').value = '';
         }
 
-        function tRank(id){ let s=staffData.find(x=>x.id===id); s.inRank=!s.inRank; s.joinTime=Date.now(); save(); render(); }
-        function delB(sid,bid){ if(confirm('刪除？')){ const s=staffData.find(x=>x.id===sid); s.bookings=s.bookings.filter(b=>b.id!==bid); save(); render(); } }
-        function delL(sid,i){ staffData.find(x=>x.id===sid).logs.splice(i,1); save(); render(); closeM('logModal'); }
-        function handleAct(type){ closeM('actModal'); if(type==='amt') document.getElementById('amtModal').style.display='flex'; else showPage('page-book'); }
-        function toggleMode(){ isBoss=!isBoss; render(); }
-        function clearRank(){ if(confirm('清空？')){ staffData.forEach(s=>s.inRank=false); save(); render(); }}
-        function clearAllLogs(){ if(confirm('清空？')){ staffData.forEach(s=>s.logs=[]); save(); render(); }}
+        function hAmt(a){ 
+            const amt = parseInt(a);
+            if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
+            const now = getTW(); const timeTag = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            staffData.find(x=>x.id===selIds[0]).logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, otherC:mode.otherC, otherRate:mode.otherC ? savedOtherRate : null, time: timeTag}); 
+            closeM('amtModal'); save(); render();
+        }
 
-        document.getElementById('priceBtnGroup').innerHTML = [200,350,500,700,800,1050,1200,1400].map(p=>`<button class="btn-action" style="background:#444" onclick="hAmt(${p})">${p}</button>`).join('');
-        const dD = document.getElementById('bookDur'); for(let i=15;i<=180;i+=15) dD.innerHTML+=`<option value="${i}">${i} 分</option>`; dD.value=60;
+        function tRank(id){ let s=staffData.find(x=>x.id===id); s.inRank=!s.inRank; s.joinTime=Date.now(); save(); render();
+        }
+        function delB(sid,bid){ if(confirm('刪除？')){ const s=staffData.find(x=>x.id===sid); s.bookings=s.bookings.filter(b=>b.id!==bid); save(); render();
+        } }
+        function delL(sid,i){ staffData.find(x=>x.id===sid).logs.splice(i,1); save(); render(); closeM('logModal');
+        }
+        function handleAct(type){ closeM('actModal'); if(type==='amt') document.getElementById('amtModal').style.display='flex'; else showPage('page-book');
+        }
+        function toggleMode(){ isBoss=!isBoss; render();
+        }
+        function clearRank(){ if(confirm('清空？')){ staffData.forEach(s=>s.inRank=false); save(); render();
+        }}
+        function clearAllLogs(){ if(confirm('清空？')){ staffData.forEach(s=>s.logs=[]); save(); render();
+        }}
+
+        document.getElementById('priceBtnGroup').innerHTML = [200,400,600,800,1000,1200,1400,1600].map(p=>`<button class="btn-action" style="background:#444" onclick="hAmt(${p})">${p}</button>`).join('');
+        const dD = document.getElementById('bookDur');
+        for(let i=15;i<=180;i+=15) dD.innerHTML+=`<option value="${i}">${i} 分</option>`; dD.value=60;
         const iNow = getTW(); const dStr = iNow.getFullYear()+'-'+String(iNow.getMonth()+1).padStart(2,'0')+'-'+String(iNow.getDate()).padStart(2,'0');
         document.getElementById('todayDate').value = dStr; document.getElementById('bookDate').value = dStr;
+        document.getElementById('listDate').value = dStr;
         
         updateOtherRateUI();
         render(); setInterval(render, 30000);
