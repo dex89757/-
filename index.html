@@ -95,6 +95,7 @@
                 <button id="bk_sign" class="tag-btn" style="font-size:18px;" onclick="toggleBk('sign')">簽名</button>
                 <button id="bk_coupon" class="tag-btn" style="font-size:18px;" onclick="toggleBk('coupon')">卷</button>
                 <button id="bk_private" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleBk('private')">企進</button>
+                <button id="bk_discount9" class="tag-btn" style="font-size:18px; color:var(--yellow);" onclick="toggleBk('discount9')">九折</button>
             </div>
             <div class="tag-grid tag-grid-small">
                 <button id="bk_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOilBk('oilS')">油（師）</button>
@@ -164,6 +165,7 @@
             <button id="ma_sign" class="tag-btn" style="font-size:18px;" onclick="toggleMa('sign')">簽名</button>
             <button id="ma_coupon" class="tag-btn" style="font-size:18px;" onclick="toggleMa('coupon')">卷</button>
             <button id="ma_private" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleMa('private')">企進</button>
+            <button id="ma_discount9" class="tag-btn" style="font-size:18px; color:var(--yellow);" onclick="toggleMa('discount9')">九折</button>
         </div>
         <div class="tag-grid tag-grid-small">
             <button id="ma_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOilMa('oilS')">油（師）</button>
@@ -187,6 +189,7 @@
             <button id="m_sign" class="tag-btn" onclick="toggleM('sign')">簽名</button>
             <button id="m_coupon" class="tag-btn" onclick="toggleM('coupon')">卷</button>
             <button id="m_private" class="tag-btn" style="color:var(--purple);" onclick="toggleM('private')">企進</button>
+            <button id="m_discount9" class="tag-btn" style="color:var(--yellow);" onclick="toggleM('discount9')">九折</button>
         </div>
         <div class="tag-grid tag-grid-small" style="margin-bottom:15px;">
             <button id="m_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleOil('oilS')">油（師）</button>
@@ -204,7 +207,15 @@
         <button class="btn-action" style="background:none; color:#888; margin-top:15px;" onclick="closeM('amtModal')">不做變更並關閉</button>
     </div></div>
 
-    <div id="historyEditModal" class="modal"><div class="modal-content"><h3>修正明細</h3><div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:15px;"><button id="he_isD" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isD')">指名</button><button id="he_isExtra" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isExtra')">外</button><button id="he_isP" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isP')">簽名</button><button id="he_isC" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isC')">卷</button><button id="he_isPri" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleHE('isPri')">企進</button></div>
+    <div id="historyEditModal" class="modal"><div class="modal-content"><h3>修正明細</h3>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:15px;">
+        <button id="he_isD" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isD')">指名</button>
+        <button id="he_isExtra" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isExtra')">外</button>
+        <button id="he_isP" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isP')">簽名</button>
+        <button id="he_isC" class="tag-btn" style="font-size:18px;" onclick="toggleHE('isC')">卷</button>
+        <button id="he_isPri" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleHE('isPri')">企進</button>
+        <button id="he_discount9" class="tag-btn" style="font-size:18px; color:var(--yellow);" onclick="toggleHE('discount9')">九折</button>
+    </div>
     <div class="tag-grid tag-grid-small" style="margin-bottom:15px;">
         <button id="he_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilS')">油（師）</button>
         <button id="he_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleHE('oilB')">油（店）</button>
@@ -247,9 +258,9 @@
         const defaultFemale = [2, 38, 100, 101, 904, 905, 906, 907];
 
         let selIds=[], isBoss=false, editBookId=null, matchSels=[]; 
-        let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false};
-        let bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false};
-        let matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false};
+        let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false, discount9:false};
+        let bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false, discount9:false};
+        let matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false, discount9:false};
 
         let specialCounts = { "0": 0, "-1": 0, "-2": 0 };
         let tempSpecId = null; 
@@ -382,6 +393,11 @@
                     
                     let rate = l.otherC ? (l.otherRate / 100) : 0.7;
                     let sP = Math.round(baseAmt * rate), bP = baseAmt - sP;
+                    
+                    // 九折標籤：店內吸收折扣部分
+                    if(l.discount9) {
+                        bP -= Math.round(l.amt * 0.1);
+                    }
                     
                     if(l.oilS) sSum += (sP + oil); else sSum += sP;
                     if(l.oilB) bSum += (bP + oil); else bSum += bP;
@@ -599,6 +615,7 @@
                         if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
                         if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
                         if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`);
+                        if(l.discount9) tags.push('[九折]');
                         const timeTag = l.time ? `<span style="color:#888; font-size:14px; margin-left:15px;">${l.time}</span>` : '';
                         return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}${timeTag}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><div style="display:flex; gap:5px;"><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button><button class="btn-del" onclick="event.stopPropagation(); deleteHistoryLog(${dayIndex}, ${rIdx}, ${lIdx})">刪</button></div></div>`;
                     }).join('') : '';
@@ -646,7 +663,7 @@
             if (isLive) tempHE = JSON.parse(JSON.stringify(staffData.find(s=>s.id===d).logs[l]));
             else tempHE = JSON.parse(JSON.stringify(historyData[d].records[r].fullLogs[l]));
             document.getElementById('he_amt').value = tempHE.amt;
-            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri', 'otherC'].forEach(k => { 
+            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri', 'otherC', 'discount9'].forEach(k => { 
                 const target = k === 'isD' ? 'he_isD' : (k === 'isPri' ? 'he_isPri' : 'he_'+k); 
                 const btn = document.getElementById(target);
                 if(btn) btn.classList.toggle('tag-active', !!tempHE[k]); 
@@ -663,7 +680,7 @@
             }
             else { tempHE[k]=!tempHE[k]; }
             
-            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri', 'otherC'].forEach(key => { 
+            ['isD', 'isExtra', 'isP', 'isC', 'oilS', 'oilB', 'isPri', 'otherC', 'discount9'].forEach(key => { 
                 const target = key === 'isD' ? 'he_isD' : (key === 'isPri' ? 'he_isPri' : 'he_'+key);
                 const btn = document.getElementById(target); 
                 if(btn) btn.classList.toggle('tag-active', !!tempHE[key]); 
@@ -746,7 +763,7 @@
                     const eMs = new Date(`${b.date}T${b.time}`).getTime() + (b.dur * 60000);
                     if (nowMs >= eMs) {
                         if (b.amt > 0) {
-                            let log = { amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC, isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri, otherC: b.otherC, otherRate: b.otherRate, time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}` };
+                            let log = { amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC, isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri, otherC: b.otherC, otherRate: b.otherRate, discount9: b.discount9, time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}` };
                             if (s.id <= 0) {
                                 let assignedSid = null;
                                 for (let sid in tentDetailsForStaff) { if (tentDetailsForStaff[sid].some(req => req.id === b.id)) { assignedSid = parseInt(sid); break; } }
@@ -842,6 +859,11 @@
                     let rate = l.otherC ? (l.otherRate / 100) : 0.7;
                     let sP = Math.round(baseAmt * rate), bP = baseAmt - sP; 
                     
+                    // 九折標籤：店內吸收折扣部分
+                    if(l.discount9) {
+                        bP -= Math.round(l.amt * 0.1);
+                    }
+                    
                     if(l.oilS) sSum += (sP + oil); else sSum += sP; 
                     if(l.oilB) bSum += (bP + oil); else bSum += bP;
                     if(l.isP || l.isC) bSum -= l.amt; 
@@ -881,7 +903,7 @@
             const s=staffData.find(x=>x.id===id); 
             document.getElementById('logTitle').innerText = (id > 0 ? getStaffDisplayName(id) : getSpecialName(id))+'今日明細';
             document.getElementById('logList').innerHTML = s.logs.map((l,i)=>{
-                let tags = []; if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]'); if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`);
+                let tags = []; if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]'); if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`); if(l.discount9) tags.push('[九折]');
                 const timeStr = l.time ? `<span style="font-size:16px;color:#888;margin-left:15px;">${l.time}</span>` : '';
                 return `<div style="padding:15px 10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;flex-direction:column;"><span style="font-size:24px;font-weight:bold;color:${l.isPri?'var(--purple)':'var(--green)'};">$${l.amt}${timeStr}</span><span style="font-size:16px;color:var(--orange);">${tags.join(' ')}</span></div><div><button onclick="openHE(${id},0,${i},true)" class="btn-edit" style="margin-right:5px;">改</button><button onclick="delL(${id},${i})" class="btn-del">刪</button></div></div>`;
             }).join('');
@@ -911,7 +933,7 @@
             if (!checkAvailability(start, end, tIds, specialCounts)) return alert('時段衝突！該時段人力不足或指定師傅忙碌/未上班。');
             if(editBookId !== null) staffData.forEach(s => { s.bookings = s.bookings.filter(b => b.id !== editBookId); });
             const bData = { id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt, amt: activeAmt, isD: activeMode.des, isP: activeMode.sign, isC: activeMode.coupon, isExtra: activeMode.extra, oilS: activeMode.oilS, oilB: activeMode.oilB, isPri: activeMode.private, otherC: activeMode.otherC, otherRate: activeMode.otherC ?
-            savedOtherRate : null };
+            savedOtherRate : null, discount9: activeMode.discount9 };
             tIds.forEach(sid => { staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
             aS.forEach(sid => { for(let i=0; i<specialCounts[sid]; i++) staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
             editBookId = null; document.getElementById('cancelBookBtn').style.display='none'; document.getElementById('bookNote').value = '';
@@ -968,7 +990,7 @@
             editBookId = bid; selIds = [sid]; document.getElementById('bookDate').value = b.date; document.getElementById('bookTime').value = b.time;
             document.getElementById('bookDur').value = b.dur; document.getElementById('bookNote').value = b.note || '';
             document.getElementById('bookAmt').value = b.amt || '';
-            bookMode = {des:!!b.isD, extra:!!b.isExtra, sign:!!b.isP, coupon:!!b.isC, oilS:!!b.oilS, oilB:!!b.oilB, private:!!b.isPri, otherC:!!b.otherC};
+            bookMode = {des:!!b.isD, extra:!!b.isExtra, sign:!!b.isP, coupon:!!b.isC, oilS:!!b.oilS, oilB:!!b.oilB, private:!!b.isPri, otherC:!!b.otherC, discount9:!!b.discount9};
             updateBookTags(); document.getElementById('cancelBookBtn').style.display = 'block'; showPage('page-book');
         }
 
@@ -981,31 +1003,31 @@
         }
         function toggleOilBk(t) { if(t==='oilS'){bookMode.oilS=!bookMode.oilS; if(bookMode.oilS)bookMode.oilB=false;} else{bookMode.oilB=!bookMode.oilB; if(bookMode.oilS)bookMode.oilS=false;} updateBookTags();
         }
-        function resetBookMode() { bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; updateBookTags();
+        function resetBookMode() { bookMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false, discount9:false}; updateBookTags();
         }
-        function updateBookTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('bk_'+k); if(el) el.style.borderColor=bookMode[k]?'#fff':'transparent'; });
+        function updateBookTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC','discount9'].forEach(k=> { const el=document.getElementById('bk_'+k); if(el) el.style.borderColor=bookMode[k]?'#fff':'transparent'; });
         }
         function toggleMa(t){ matchMode[t]=!matchMode[t]; updateMatchTags();
         }
         function toggleOilMa(t) { if(t==='oilS'){matchMode.oilS=!matchMode.oilS; if(matchMode.oilS)matchMode.oilB=false;} else{matchMode.oilB=!matchMode.oilB; if(matchMode.oilB)matchMode.oilS=false;} updateMatchTags();
         }
-        function resetMatchMode() { matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false}; updateMatchTags();
+        function resetMatchMode() { matchMode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false, discount9:false}; updateMatchTags();
             document.getElementById('matchAmt').value=''; }
-        function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('ma_'+k); if(el) el.style.borderColor=matchMode[k]?'#fff':'transparent'; });
+        function updateMatchTags() { ['des','extra','sign','coupon','oilS','oilB','private','otherC','discount9'].forEach(k=> { const el=document.getElementById('ma_'+k); if(el) el.style.borderColor=matchMode[k]?'#fff':'transparent'; });
         }
         function toggleM(t){ mode[t]=!mode[t]; document.getElementById('m_'+t).style.borderColor=mode[t]?'#fff':'transparent';
         }
         function toggleOil(t) { if(t==='oilS'){mode.oilS=!mode.oilS; if(mode.oilS)mode.oilB=false;} else{mode.oilB=!mode.oilB; if(mode.oilB)mode.oilS=false;} ['oilS','oilB'].forEach(k=>document.getElementById('m_'+k).style.borderColor=mode[k]?'#fff':'transparent');
         }
-        function resetModes() { mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false};
-            ['des','extra','sign','coupon','oilS','oilB','private','otherC'].forEach(k=> { const el=document.getElementById('m_'+k); if(el) el.style.borderColor='transparent'; }); document.getElementById('customAmt').value = '';
+        function resetModes() { mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false, discount9:false};
+            ['des','extra','sign','coupon','oilS','oilB','private','otherC','discount9'].forEach(k=> { const el=document.getElementById('m_'+k); if(el) el.style.borderColor='transparent'; }); document.getElementById('customAmt').value = '';
         }
 
         function hAmt(a){ 
             const amt = parseInt(a);
             if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
             const now = getTW(); const timeTag = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            staffData.find(x=>x.id===selIds[0]).logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, otherC:mode.otherC, otherRate:mode.otherC ? savedOtherRate : null, time: timeTag}); 
+            staffData.find(x=>x.id===selIds[0]).logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, otherC:mode.otherC, otherRate:mode.otherC ? savedOtherRate : null, discount9:mode.discount9, time: timeTag}); 
             closeM('amtModal'); save(); render();
         }
 
