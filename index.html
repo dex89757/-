@@ -268,6 +268,7 @@
         let tempHE = {};
         let renamingStaffId = null;
         let savedOtherRate = parseInt(localStorage.getItem('massageOtherRate')) || 75;
+        let savedOtherPaid = localStorage.getItem('massageOtherPaid') !== 'false';
 
         let staffNames = JSON.parse(localStorage.getItem('massageStaffNames')) || {};
         staffIds.forEach((id, index) => {
@@ -332,8 +333,16 @@
             if (newRate !== null && !isNaN(newRate) && newRate > 0 && newRate <= 100) {
                 savedOtherRate = parseInt(newRate);
                 localStorage.setItem('massageOtherRate', savedOtherRate);
+
+                let payMode = prompt('請輸入付款方式：\n1 = 已付款（比照簽名、卷）\n2 = 未付款（一般計算方式）', savedOtherPaid ? '1' : '2');
+
+                if (payMode !== null) {
+                    savedOtherPaid = payMode === '1';
+                    localStorage.setItem('massageOtherPaid', savedOtherPaid);
+                }
+
                 updateOtherRateUI();
-                showT('抽成比例已更新為 ' + savedOtherRate + '%');
+                showT('其它設定已更新');
             }
         }
 
@@ -401,7 +410,7 @@
                     
                     if(l.oilS) sSum += (sP + oil); else sSum += sP;
                     if(l.oilB) bSum += (bP + oil); else bSum += bP;
-                    if(l.isP || l.isC) bSum -= l.amt;
+                    if(l.isP || l.isC || (l.otherC && l.otherPaid)) bSum -= l.amt;
                 });
                 const curS = isBoss ? bSum : sSum;
                 gTotal += tAmt; gSettle += curS;
@@ -614,7 +623,7 @@
                         let tags = []; 
                         if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); 
                         if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]');
-                        if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`);
+                        if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}% ${l.otherPaid ? '已付款' : '未付款'}]`);
                         if(l.discount9) tags.push('[九折]');
                         const timeTag = l.time ? `<span style="color:#888; font-size:14px; margin-left:15px;">${l.time}</span>` : '';
                         return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}${timeTag}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><div style="display:flex; gap:5px;"><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button><button class="btn-del" onclick="event.stopPropagation(); deleteHistoryLog(${dayIndex}, ${rIdx}, ${lIdx})">刪</button></div></div>`;
@@ -763,7 +772,7 @@
                     const eMs = new Date(`${b.date}T${b.time}`).getTime() + (b.dur * 60000);
                     if (nowMs >= eMs) {
                         if (b.amt > 0) {
-                            let log = { amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC, isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri, otherC: b.otherC, otherRate: b.otherRate, discount9: b.discount9, time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}` };
+                            let log = { amt: b.amt, isD: b.isD, isP: b.isP, isC: b.isC, isExtra: b.isExtra, oilS: b.oilS, oilB: b.oilB, isPri: b.isPri, otherC: b.otherC, otherRate: b.otherRate, otherPaid: b.otherPaid, discount9: b.discount9, time: `${String(new Date(eMs).getHours()).padStart(2,'0')}:${String(new Date(eMs).getMinutes()).padStart(2,'0')}` };
                             if (s.id <= 0) {
                                 let assignedSid = null;
                                 for (let sid in tentDetailsForStaff) { if (tentDetailsForStaff[sid].some(req => req.id === b.id)) { assignedSid = parseInt(sid); break; } }
@@ -866,7 +875,7 @@
                     
                     if(l.oilS) sSum += (sP + oil); else sSum += sP; 
                     if(l.oilB) bSum += (bP + oil); else bSum += bP;
-                    if(l.isP || l.isC) bSum -= l.amt; 
+                    if(l.isP || l.isC || (l.otherC && l.otherPaid)) bSum -= l.amt; 
                 });
                 const curS = isBoss ? bSum : sSum; gTotal += tAmt;
                 gSettle += curS;
@@ -903,7 +912,7 @@
             const s=staffData.find(x=>x.id===id); 
             document.getElementById('logTitle').innerText = (id > 0 ? getStaffDisplayName(id) : getSpecialName(id))+'今日明細';
             document.getElementById('logList').innerHTML = s.logs.map((l,i)=>{
-                let tags = []; if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]'); if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}%]`); if(l.discount9) tags.push('[九折]');
+                let tags = []; if(l.isD) tags.push('[指]'); if(l.isP) tags.push('[簽]'); if(l.isC) tags.push('[卷]'); if(l.isExtra) tags.push('[外]'); if(l.oilS) tags.push('[油師]'); if(l.oilB) tags.push('[油店]'); if(l.isPri) tags.push('[企]'); if(l.otherC) tags.push(`[其它${l.otherRate}% ${l.otherPaid ? '已付款' : '未付款'}]`); if(l.discount9) tags.push('[九折]');
                 const timeStr = l.time ? `<span style="font-size:16px;color:#888;margin-left:15px;">${l.time}</span>` : '';
                 return `<div style="padding:15px 10px;border-bottom:1px solid #444;display:flex;justify-content:space-between;align-items:center;"><div style="display:flex;flex-direction:column;"><span style="font-size:24px;font-weight:bold;color:${l.isPri?'var(--purple)':'var(--green)'};">$${l.amt}${timeStr}</span><span style="font-size:16px;color:var(--orange);">${tags.join(' ')}</span></div><div><button onclick="openHE(${id},0,${i},true)" class="btn-edit" style="margin-right:5px;">改</button><button onclick="delL(${id},${i})" class="btn-del">刪</button></div></div>`;
             }).join('');
@@ -933,7 +942,7 @@
             if (!checkAvailability(start, end, tIds, specialCounts)) return alert('時段衝突！該時段人力不足或指定師傅忙碌/未上班。');
             if(editBookId !== null) staffData.forEach(s => { s.bookings = s.bookings.filter(b => b.id !== editBookId); });
             const bData = { id:Date.now() + Math.random(), date:d, time:t, dur:du, note:nt, amt: activeAmt, isD: activeMode.des, isP: activeMode.sign, isC: activeMode.coupon, isExtra: activeMode.extra, oilS: activeMode.oilS, oilB: activeMode.oilB, isPri: activeMode.private, otherC: activeMode.otherC, otherRate: activeMode.otherC ?
-            savedOtherRate : null, discount9: activeMode.discount9 };
+            savedOtherRate : null, otherPaid: activeMode.otherC ? savedOtherPaid : false, discount9: activeMode.discount9 };
             tIds.forEach(sid => { staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
             aS.forEach(sid => { for(let i=0; i<specialCounts[sid]; i++) staffData.find(x=>x.id===sid).bookings.push({...bData, id:Date.now() + Math.random()}); });
             editBookId = null; document.getElementById('cancelBookBtn').style.display='none'; document.getElementById('bookNote').value = '';
@@ -1027,7 +1036,7 @@
             const amt = parseInt(a);
             if(isNaN(amt) || amt <= 0) return alert('請輸入或選擇有效金額');
             const now = getTW(); const timeTag = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            staffData.find(x=>x.id===selIds[0]).logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, otherC:mode.otherC, otherRate:mode.otherC ? savedOtherRate : null, discount9:mode.discount9, time: timeTag}); 
+            staffData.find(x=>x.id===selIds[0]).logs.push({amt:amt, isD:mode.des, isP:mode.sign, isC:mode.coupon, isExtra:mode.extra, oilS:mode.oilS, oilB:mode.oilB, isPri:mode.private, otherC:mode.otherC, otherRate:mode.otherC ? savedOtherRate : null, otherPaid: mode.otherC ? savedOtherPaid : false, discount9:mode.discount9, time: timeTag}); 
             closeM('amtModal'); save(); render();
         }
 
