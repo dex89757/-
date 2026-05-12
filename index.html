@@ -226,6 +226,46 @@
     </div>
     <input type="number" id="he_amt" class="input-dark" placeholder="修改金額"><button class="btn-action" style="background:var(--blue)" onclick="saveHistoryEdit()">確認修改</button><button class="btn-action" style="background:none; color:#888;" onclick="closeM('historyEditModal')">取消</button></div></div>
     
+
+    <div id="addHistoryModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">➕ 新增金額</h3>
+
+            <select id="addHistoryStaff" class="input-dark"></select>
+
+            <input type="number" id="addHistoryAmt" class="input-dark" placeholder="輸入金額">
+
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:15px;">
+                <button id="ah_isD" class="tag-btn" style="font-size:18px;" onclick="toggleAH('isD')">指名</button>
+                <button id="ah_isExtra" class="tag-btn" style="font-size:18px;" onclick="toggleAH('isExtra')">外</button>
+                <button id="ah_isP" class="tag-btn" style="font-size:18px;" onclick="toggleAH('isP')">簽名</button>
+
+                <button id="ah_isC" class="tag-btn" style="font-size:18px;" onclick="toggleAH('isC')">卷</button>
+                <button id="ah_isPri" class="tag-btn" style="font-size:18px; color:var(--purple);" onclick="toggleAH('isPri')">企進</button>
+                <button id="ah_discount9" class="tag-btn" style="font-size:18px; color:var(--yellow);" onclick="toggleAH('discount9')">九折</button>
+            </div>
+
+            <div class="tag-grid tag-grid-small" style="margin-bottom:15px;">
+                <button id="ah_oilS" class="tag-btn" style="font-size:18px;" onclick="toggleAH('oilS')">油（師）</button>
+
+                <button id="ah_oilB" class="tag-btn" style="font-size:18px;" onclick="toggleAH('oilB')">油（店）</button>
+
+                <button id="ah_otherC" class="tag-btn" style="font-size:18px;" onclick="toggleAH('otherC')">
+                    其它(<span class="other-rate-disp"></span>%)
+                </button>
+            </div>
+
+            <button class="btn-action" style="background:var(--blue)" onclick="saveAddHistory()">
+                確認新增
+            </button>
+
+            <button class="btn-action" style="background:#333;" onclick="closeM('addHistoryModal')">
+                取消
+            </button>
+        </div>
+    </div>
+
+
     <div id="actModal" class="modal"><div class="modal-content"><h2 id="actTitle" style="text-align:center; font-size:36px;"></h2><button class="btn-action" style="background:var(--blue); padding:25px 0;" onclick="handleAct('amt')">💰 金額記帳</button><button class="btn-action" style="background:var(--green); padding:25px 0;" onclick="handleAct('book')">⏰ 預約排程</button><button class="btn-action" style="background:none; border:1px solid #444;" onclick="closeM('actModal')">返回</button></div></div>
     <div id="logModal" class="modal"><div class="modal-content"><h3 id="logTitle"></h3><div id="logList"></div><button class="btn-action" style="background:#333;margin-top:20px;" onclick="closeM('logModal')">關閉</button></div></div>
     <div id="reportModal" class="modal"><div class="modal-content">
@@ -265,6 +305,19 @@
         let specialCounts = { "0": 0, "-1": 0, "-2": 0 };
         let tempSpecId = null; 
         let activeHE = { d: null, r: null, l: null, isLive: false };
+        let addHistoryTargetDate = '';
+        let tempAddHistoryMode = {
+            isD:false,
+            isExtra:false,
+            isP:false,
+            isC:false,
+            oilS:false,
+            oilB:false,
+            isPri:false,
+            otherC:false,
+            discount9:false
+        };
+
         let tempHE = {};
         let renamingStaffId = null;
         let savedOtherRate = parseInt(localStorage.getItem('massageOtherRate')) || 75;
@@ -596,7 +649,7 @@
             const monthPrefix = `${selYear}-${selMonth}`;
             let filteredHistory = historyData.map((h, originalIndex) => ({...h, originalIndex}))
                                            .filter(h => h.date.startsWith(monthPrefix))
-                                           .reverse();
+                                           .sort((a,b)=>b.date.localeCompare(a.date));
             let html = filteredHistory.map((day) => {
                 const dayIndex = day.originalIndex;
                 let dayPersons = 0, dayTotalAmt = 0, dayDes = 0, dayCash = 0, daySign = 0, dayCoupon = 0;
@@ -644,7 +697,24 @@
                 }).join('');
 
                 return `<div class="history-card">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b style="color:var(--orange)">${day.date}</b></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <b style="color:var(--orange)">${day.date}</b>
+
+                    <button
+                        style="
+                            background:var(--green);
+                            border:none;
+                            color:#fff;
+                            padding:8px 14px;
+                            border-radius:10px;
+                            cursor:pointer;
+                            font-size:16px;
+                        "
+                        onclick="openAddHistory('${day.date}')"
+                    >
+                        ➕ 新增金額
+                    </button>
+                </div>
                     <table class="report-table">
                         <thead><tr><th>師傅</th><th>收入</th><th>指名率</th><th>節數</th></tr></thead>
                         <tbody>${tableRows}</tbody>
@@ -720,6 +790,162 @@
         }
 
         function deleteHistoryDay(idx) { if (confirm('確定刪除？')) { historyData.splice(idx, 1); save(); renderHistoryList(); } }
+
+        function openAddHistory(dateStr) {
+
+            document.getElementById('reportModal').style.display = 'none';
+
+            addHistoryTargetDate = dateStr;
+
+            tempAddHistoryMode = {
+                isD:false,
+                isExtra:false,
+                isP:false,
+                isC:false,
+                oilS:false,
+                oilB:false,
+                isPri:false,
+                otherC:false,
+                discount9:false
+            };
+
+            const select = document.getElementById('addHistoryStaff');
+
+            select.innerHTML = staffIds.map(id => {
+                return `<option value="${id}">${getStaffDisplayName(id)}</option>`;
+            }).join('');
+
+            [
+                'isD',
+                'isExtra',
+                'isP',
+                'isC',
+                'oilS',
+                'oilB',
+                'isPri',
+                'otherC',
+                'discount9'
+            ].forEach(k => {
+                const btn = document.getElementById('ah_' + k);
+                if(btn) btn.classList.remove('tag-active');
+            });
+
+            document.getElementById('addHistoryAmt').value = '';
+
+            document.getElementById('addHistoryModal').style.display = 'flex';
+        }
+
+        function toggleAH(k) {
+
+            if(k === 'oilS') {
+                tempAddHistoryMode.oilS = !tempAddHistoryMode.oilS;
+                if(tempAddHistoryMode.oilS) tempAddHistoryMode.oilB = false;
+            }
+            else if(k === 'oilB') {
+                tempAddHistoryMode.oilB = !tempAddHistoryMode.oilB;
+                if(tempAddHistoryMode.oilB) tempAddHistoryMode.oilS = false;
+            }
+            else {
+                tempAddHistoryMode[k] = !tempAddHistoryMode[k];
+            }
+
+            [
+                'isD',
+                'isExtra',
+                'isP',
+                'isC',
+                'oilS',
+                'oilB',
+                'isPri',
+                'otherC',
+                'discount9'
+            ].forEach(key => {
+
+                const btn = document.getElementById('ah_' + key);
+
+                if(btn) {
+                    btn.classList.toggle('tag-active', !!tempAddHistoryMode[key]);
+                }
+            });
+        }
+
+        function saveAddHistory() {
+
+            const amt = parseInt(document.getElementById('addHistoryAmt').value);
+
+            if(!amt || amt <= 0) {
+                alert('請輸入金額');
+                return;
+            }
+
+            const staffId = parseInt(document.getElementById('addHistoryStaff').value);
+
+            let targetDay = historyData.find(h => h.date === addHistoryTargetDate);
+
+            if(!targetDay) {
+
+                targetDay = {
+                    date: addHistoryTargetDate,
+                    records: []
+                };
+
+                historyData.push(targetDay);
+            }
+
+            let targetRecord = targetDay.records.find(r => r.id === staffId);
+
+            if(!targetRecord) {
+
+                targetRecord = {
+                    id: staffId,
+                    totalAmt: 0,
+                    desAmt: 0,
+                    fullLogs: []
+                };
+
+                targetDay.records.push(targetRecord);
+            }
+
+            const newLog = {
+                amt: amt,
+                isD: tempAddHistoryMode.isD,
+                isExtra: tempAddHistoryMode.isExtra,
+                isP: tempAddHistoryMode.isP,
+                isC: tempAddHistoryMode.isC,
+                oilS: tempAddHistoryMode.oilS,
+                oilB: tempAddHistoryMode.oilB,
+                isPri: tempAddHistoryMode.isPri,
+                otherC: tempAddHistoryMode.otherC,
+                otherRate: savedOtherRate,
+                otherPaid: savedOtherPaid,
+                discount9: tempAddHistoryMode.discount9,
+                time: '補登'
+            };
+
+            targetRecord.fullLogs.push(newLog);
+
+            targetRecord.totalAmt =
+                targetRecord.fullLogs.reduce((s,x)=>s+x.amt,0);
+
+            targetRecord.desAmt =
+                targetRecord.fullLogs
+                    .filter(x=>x.isD)
+                    .reduce((s,x)=>s+x.amt,0);
+
+            historyData.sort((a,b)=>a.date.localeCompare(b.date));
+
+            save();
+
+            closeM('addHistoryModal');
+
+            document.getElementById('reportModal').style.display = 'flex';
+
+            renderHistoryList();
+
+            showT('新增成功');
+        }
+
+
 
         function render(){
             const now = getTW();
