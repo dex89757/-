@@ -696,7 +696,7 @@ function openReport() {
                 });
             });
             const sortedIds = Object.keys(summary).sort((a, b) => Number(a) - Number(b));
-            let html = `<table class="report-table"><thead><tr><th>師傅</th><th>收入</th><th>指名率</th><th>節數</th></tr></thead><tbody>`;
+            let html = `<table class="report-table"><thead><tr><th>師傅</th><th>總計</th><th>收入</th><th>指名率</th><th>節數</th></tr></thead><tbody>`;
             let grandTotal = 0;
             sortedIds.forEach(id => {
                 const data = summary[id];
@@ -704,7 +704,8 @@ function openReport() {
                 const desRate = data.total > 0 ? Math.round((data.des / data.total) * 100) : 0;
                 const units = data.total > 0 ? (data.total / 800).toFixed(1) : 0;
                 grandTotal += data.total;
-                html += `<tr><td><b>${name}</b></td><td style="color:var(--green);">$${data.total}</td><td>${desRate}%</td><td style="color:var(--orange);">${units}</td></tr>`;
+                const staffIncome = Math.round(data.total * 0.7);
+                html += `<tr><td><b>${name}</b></td><td style="color:var(--green);">$${data.total}</td><td style="color:var(--blue);">$${staffIncome}</td><td>${desRate}%</td><td style="color:var(--orange);">${units}</td></tr>`;
             });
             html += `</tbody></table><div class="summary-box">
                 <div class="summary-item"><span class="summary-label">全店總人數</span><span class="summary-val">${totalPersons}</span></div>
@@ -757,10 +758,13 @@ function openReport() {
                         return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #333; font-size:16px;"><div style="display:flex; flex-direction:column;"><span style="font-weight:bold; color:${l.isPri?'var(--purple)':'var(--green)'}; font-size:18px;">$${l.amt}${timeTag}</span><span style="color:var(--orange); font-size:14px;">${tags.join(' ')}</span></div><div style="display:flex; gap:5px;"><button class="btn-edit" onclick="event.stopPropagation(); openHE(${dayIndex}, ${rIdx}, ${lIdx})">改</button><button class="btn-del" onclick="event.stopPropagation(); deleteHistoryLog(${dayIndex}, ${rIdx}, ${lIdx})">刪</button></div></div>`;
                     }).join('') : '';
 
+                    const staffIncome = Math.round(filteredTotal * 0.7);
+
                     return `
                         <tr onclick="toggleH('${uid}')" style="cursor:pointer;">
                             <td><b>${name}</b></td>
                             <td style="color:var(--green);">$${filteredTotal}</td>
+                            <td style="color:var(--blue);">$${staffIncome}</td>
                             <td>${desRate}%</td>
                             <td style="color:var(--orange);">${units}</td>
                         </tr>
@@ -774,7 +778,7 @@ function openReport() {
                 return `<div class="history-card">
                     <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b style="color:var(--orange)">${day.date}</b></div>
                     <table class="report-table">
-                        <thead><tr><th>師傅</th><th>收入</th><th>指名率</th><th>節數</th></tr></thead>
+                        <thead><tr><th>師傅</th><th>總計</th><th>收入</th><th>指名率</th><th>節數</th></tr></thead>
                         <tbody>${tableRows}</tbody>
                     </table>
                     <div class="summary-box" style="margin-top:15px; background: rgba(255,255,255,0.05);">
