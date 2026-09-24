@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>排班與業績管理系統</title>
+    <!-- Excel XLSX support: SheetJS CE 0.20.3 -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --blue: #007AFF; --red: #ff3b30; --green: #30d158; --bg: #000; --card: #1c1c1e; --purple: #af52de; --orange: #ff9500; --yellow: #ffcc00; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; user-select: none; font-size: 20px; font-weight: 300; }
@@ -71,9 +73,13 @@
     <div id="page-staff" class="page">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h3>👤 師傅排班</h3>
-            <span style="color:#888; font-size:14px;">點擊兩次可修改名稱與性別</span>
+            <span style="color:#888; font-size:14px;">雙擊可修改號碼與姓名</span>
         </div>
         <div id="staffGridOn" class="staff-grid"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <button class="btn-action" style="background:var(--green);" onclick="openAddStaff()">➕ 新增師傅</button>
+            <button class="btn-action" style="background:var(--red);" onclick="removeStaff()">➖ 移除師傅</button>
+        </div>
         <button class="btn-action" style="background:#444;" onclick="clearRank()">🧹 清空看板</button>
     </div>
 
@@ -146,6 +152,15 @@
     <div id="personModal" class="modal"><div class="modal-content"><h3 id="personTitle" style="text-align:center;">選擇人數</h3><div class="staff-grid" style="grid-template-columns: repeat(2, 1fr);"><button class="btn-action" style="background:#333" onclick="setPersonCount(1)">1 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(2)">2 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(3)">3 位</button><button class="btn-action" style="background:#333" onclick="setPersonCount(4)">4 位</button></div><button class="btn-action" style="background:var(--red); margin-top:10px;" onclick="setPersonCount(0)">取消選擇</button></div></div>
     
     <div id="genderModal" class="modal"><div class="modal-content"><h3 id="genderTitle" style="text-align:center;">設定性別</h3><div class="staff-grid" style="grid-template-columns: 1fr 1fr;"><button class="btn-action" style="background:#333; color:#5ac8fa;" onclick="setStaffGender('male')">男師傅</button><button class="btn-action" style="background:#333; color:#ff2d55;" onclick="setStaffGender('female')">女師傅</button></div><button class="btn-action" style="background:none; border: 1px solid #444; margin-top:10px;" onclick="closeM('genderModal')">不變更</button></div></div>
+    <div id="staffEditModal" class="modal"><div class="modal-content">
+        <h3 style="text-align:center;">修改師傅資料</h3>
+        <label style="display:block;margin:12px 0 6px;color:#aaa;">師傅號碼</label>
+        <input id="staffEditNumber" type="number" inputmode="numeric" class="input-dark" placeholder="例如 2">
+        <label style="display:block;margin:12px 0 6px;color:#aaa;">師傅姓名（Excel 使用）</label>
+        <input id="staffEditName" type="text" class="input-dark" placeholder="例如 宋則憲">
+        <button class="btn-action" style="background:var(--blue);margin-top:15px;" onclick="saveStaffEdit()">儲存</button>
+        <button class="btn-action" style="background:none;border:1px solid #444;margin-top:8px;" onclick="closeM('staffEditModal')">取消</button>
+    </div></div>
 
     <div id="matchModal" class="modal"><div class="modal-content">
         <h3 style="margin-top:0;">🔍 多人匹配找空檔</h3>
@@ -247,8 +262,8 @@
                     <button style="background:var(--red); border:none; color:#fff; padding:10px 12px; border-radius:10px; cursor:pointer;" onclick="document.getElementById('singleImportInput').click()">單日匯入</button>
                 </div>
             </div>
-            <input type="file" id="fullImportInput" accept=".json" style="display:none;" onchange="importFullData(event)">
-            <input type="file" id="singleImportInput" accept=".json" style="display:none;" onchange="importSingleDay(event)">
+            <input type="file" id="fullImportInput" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importFullData(event)">
+            <input type="file" id="singleImportInput" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importSingleDay(event)">
         </div>
         <div id="reportArea"></div>
         <button class="btn-action" style="background:var(--blue); margin-top:20px;" onclick="copyReportText()">📋 複製報表文字</button>
@@ -281,6 +296,11 @@
         let savedOtherPaid = localStorage.getItem('massageOtherPaid') !== 'false';
 
         let staffNames = JSON.parse(localStorage.getItem('massageStaffNames')) || {};
+        const savedStaffRoster = JSON.parse(localStorage.getItem('massageStaffIds') || 'null');
+        if(Array.isArray(savedStaffRoster) && savedStaffRoster.length) {
+            const validRoster=[...new Set(savedStaffRoster.map(Number).filter(id=>Number.isInteger(id) && id>0))];
+            staffIds.splice(0,staffIds.length,...validRoster);
+        }
         staffIds.forEach((id, index) => {
             if(!staffNames[id]) {
                 let name = index < 12 ? id.toString() : extraNames[index - 12];
@@ -292,15 +312,19 @@
                 staffNames[id] = { name: oldName, gender: gender };
             }
         });
-        const getStaffDisplayName = (id) => staffNames[id] ? staffNames[id].name : id.toString();
+        const getStaffDisplayName = (id) => Number(id) > 0 ? `${Number(id)}號` : getSpecialName(Number(id));
         const getStaffGender = (id) => staffNames[id] ? staffNames[id].gender : 'male';
         const getMaleIds = () => staffIds.filter(id => getStaffGender(id) === 'male');
         const getFemaleIds = () => staffIds.filter(id => getStaffGender(id) === 'female');
         let staffData = JSON.parse(localStorage.getItem('massageData')) || [];
         let historyData = JSON.parse(localStorage.getItem('massageHistory')) || [];
-
-        const allPossibleIds = [...staffIds, 0, -1, -2];
-        staffData = allPossibleIds.map(id => staffData.find(s=>s.id===id) || {id, inRank:false, joinTime:0, bookings:[], logs:[]});
+        const persistedStaffIds = Array.isArray(staffData) ? staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0) : [];
+        persistedStaffIds.forEach(id=>{ if(!staffIds.includes(id)) staffIds.push(id); });
+        const allPossibleIds = [...new Set([...staffIds, 0, -1, -2])];
+        staffData = allPossibleIds.map(id => staffData.find(s=>Number(s.id)===Number(id)) || {id, inRank:false, joinTime:0, bookings:[], logs:[]});
+        staffIds.forEach(id=>{
+            if(!staffNames[id]) staffNames[id]={name:'',gender:defaultMale.includes(id)?'male':'female'};
+        });
         const getTW = () => {
             const now = new Date();
             const formatter = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
@@ -312,6 +336,7 @@
             localStorage.setItem('massageData', JSON.stringify(staffData));
             localStorage.setItem('massageHistory', JSON.stringify(historyData)); 
             localStorage.setItem('massageStaffNames', JSON.stringify(staffNames));
+            localStorage.setItem('massageStaffIds', JSON.stringify(staffIds));
         };
         
         function handleGlobalClick(e) {
@@ -550,123 +575,358 @@
 
         
 
-        function downloadJsonFile(data, filename) {
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        /* =========================================================
+           XLSX 匯出 / 匯入
+           - 不改變原本的 staffData / historyData 資料結構
+           - XLSX「系統備份」工作表保留完整原始資料，保證可再匯回
+           - 另外建立可直接用 Excel 查看的人類可讀工作表
+           ========================================================= */
+
+        function ensureXlsxReady() {
+            if (typeof XLSX === 'undefined') {
+                alert('Excel 元件尚未載入。請確認裝置可連線到網路後重新開啟此 HTML。');
+                return false;
+            }
+            return true;
+        }
+
+        function safeSheetName(name) {
+            return String(name).replace(/[\\\/\?\*\[\]\:]/g, '_').slice(0, 31) || '資料';
+        }
+
+        function addAoaSheet(workbook, name, aoa, widths) {
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            if (widths) ws['!cols'] = widths.map(w => ({ wch: w }));
+            XLSX.utils.book_append_sheet(workbook, ws, safeSheetName(name));
+            return ws;
+        }
+
+        function formatExcelPercentColumn(ws, startRow, endRow, colLetter='D') {
+            const a = Number(startRow);
+            const b = Number(endRow);
+            if (!ws || !Number.isFinite(a) || !Number.isFinite(b) || b < a) return;
+            for (let r = a; r <= b; r++) {
+                const cell = ws[`${colLetter}${r}`];
+                if (cell && typeof cell.v === 'number') cell.z = '0%';
+            }
+        }
+
+        function appendChunkedJsonRows(rows, dataset, index, value) {
+            const text = JSON.stringify(value);
+            const chunkSize = 30000;
+            const total = Math.max(1, Math.ceil(text.length / chunkSize));
+            for (let part = 0; part < total; part++) rows.push([dataset, index, part, total, text.slice(part * chunkSize, (part + 1) * chunkSize)]);
+        }
+
+        function readChunkedJsonSheet(workbook, sheetName) {
+            const ws = workbook.Sheets[sheetName];
+            if (!ws) return {};
+            const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:''});
+            const grouped = {};
+            for (let i=1;i<rows.length;i++) {
+                const row=rows[i], dataset=row[0], index=Number(row[1]), part=Number(row[2]);
+                if (!dataset || !Number.isFinite(index) || !Number.isFinite(part)) continue;
+                if (!grouped[dataset]) grouped[dataset]={};
+                if (!grouped[dataset][index]) grouped[dataset][index]=[];
+                grouped[dataset][index][part]=String(row[4] ?? '');
+            }
+            const result={};
+            Object.keys(grouped).forEach(dataset => {
+                result[dataset]=Object.keys(grouped[dataset]).sort((a,b)=>Number(a)-Number(b)).map(index=>grouped[dataset][index].join('')).map(txt=>{ try{return JSON.parse(txt);}catch(e){return null;} }).filter(v=>v!==null);
+            });
+            return result;
+        }
+
+        const REFERENCE_STAFF_NAMES = {
+            1:'宋則憲', 2:'王詩穎', 5:'黃楷家', 7:'張鳴基', 9:'盧志維',
+            10:'洪湘傑', 11:'李建璋', 12:'邱冠華', 13:'沈易昇', 38:'鄧以暄',
+            100:'王莉茹', 101:'佳惠'
+        };
+        function isRealStaffName(name, id) {
+            const n = String(name ?? '').trim();
+            if (!n) return false;
+            if (/^\d+$/.test(n)) return false;
+            if (/^[A-G]$/.test(n.toUpperCase())) return false;
+            if (n === String(id)) return false;
+            return true;
+        }
+        function getAccountingStaffName(id) {
+            const n = Number(id);
+            if (n <= 0) return getSpecialName(n);
+            const saved = staffNames[n] && typeof staffNames[n] === 'object' ? staffNames[n].name : '';
+            return isRealStaffName(saved, n) ? saved : (REFERENCE_STAFF_NAMES[n] || '');
+        }
+        function hasExcelStaffName(id) {
+            return isRealStaffName(getAccountingStaffName(id), id);
+        }
+        function displayStaffNameForExcel(id) {
+            const n = Number(id);
+            const name = getAccountingStaffName(n);
+            return n > 0 && hasExcelStaffName(n) ? `${n}號 ${name}` : '';
+        }
+        function getStaffNumberLabel(id) { return `${Number(id)}號`; }
+
+        function calcLogMoney(l) {
+            if (!l || Number(l.amt || 0) <= 0 || l.isPri) return {staff:0, store:0};
+            const amt = Number(l.amt || 0);
+            let oil=0, baseAmt=amt;
+            if (l.oilS || l.oilB) { oil = Math.floor(amt / 450) * 50; baseAmt = amt-oil; }
+            const rate = l.otherC ? ((Number(l.otherRate) || savedOtherRate) / 100) : 0.7;
+            let sP=Math.round(baseAmt*rate), bP=baseAmt-sP;
+            if(l.discount9) bP -= Math.round(amt*0.1);
+            const staff = l.oilS ? sP+oil : sP;
+            let store = l.oilB ? bP+oil : bP;
+            if(l.isP || l.isC || (l.otherC && l.otherPaid)) store -= amt;
+            return {staff, store};
+        }
+
+        function getAccountingStats(logs) {
+            const all = (logs || []);
+            const rows = all.filter(l => !l.isPri && Number(l.amt || 0) > 0);
+            let total=0, des=0, desCount=0, cash=0, sign=0, coupon=0, staff=0, store=0;
+            rows.forEach(l => {
+                const amt=Number(l.amt||0); total+=amt; if(l.isD){ des+=amt; desCount++; } if(l.isP) sign++; else if(l.isC) coupon++; else cash++;
+                const m=calcLogMoney(l); staff+=m.staff; store+=m.store;
+            });
+            return {total, des, desCount, nonDes: total-des, cash, sign, coupon, customerCount:rows.length, staff, store, desRate:rows.length>0?desCount/rows.length:0};
+        }
+
+        function buildDailyAccountingSheet(workbook, dateText, dayRecord, year, month, dayNumber) {
+            const rows=[];
+            const dayStats = getAccountingStats((dayRecord?.records || []).flatMap(r=>r.fullLogs||[]));
+            const titleDate=`${year}年${Number(month)}月${Number(dayNumber)}日`;
+            rows.push(['真輕鬆每日收入']);
+            rows.push([titleDate, '', '', '', '', '', '']);
+            rows.push(['當日總業績', dayStats.total, '當日節數', dayStats.total>0 ? (dayStats.total/800).toFixed(1) : 0]);
+            rows.push([]);
+            rows.push(['師傅','總計','收入','指名率','節數']);
+
+            const reportStaffIds = staffIds.filter(id=>id>0 && hasExcelStaffName(id));
+            const recordsById={};
+            (dayRecord?.records || []).forEach(r=>recordsById[Number(r.id)]=r);
+            const staffStartRow = rows.length + 1;
+            reportStaffIds.forEach(id=>{
+                const rec=recordsById[id];
+                const stats=getAccountingStats(rec?.fullLogs || []);
+                rows.push([displayStaffNameForExcel(id), stats.total, stats.staff, stats.desRate, stats.total>0 ? (stats.total/800).toFixed(1) : 0]);
+            });
+            const staffEndRow = rows.length;
+            rows.push([]);
+            rows.push(['店內總結']);
+            rows.push(['總業績',dayStats.total]);
+            rows.push(['店家收入',dayStats.store]);
+            rows.push(['總人數',dayStats.customerCount]);
+            rows.push(['現金人數',dayStats.cash]);
+            rows.push(['簽名人數',dayStats.sign]);
+            rows.push(['票卷人數',dayStats.coupon]);
+            const ws=addAoaSheet(workbook,String(dayNumber).padStart(2,'0'),rows,[22,14,14,12,10]);
+            formatExcelPercentColumn(ws, staffStartRow, staffEndRow, 'D');
+            ws['!freeze']={xSplit:0,ySplit:4};
+            return ws;
+        }
+
+        function buildMonthlyWorkbook(selectedYear, selectedMonth, targetRecord=null, singleDay=false) {
+            const workbook=XLSX.utils.book_new();
+            const year=Number(selectedYear), month=Number(selectedMonth);
+            const prefix=`${year}-${String(month).padStart(2,'0')}`;
+            const monthLogs=singleDay && targetRecord ? [targetRecord] : historyData.filter(h=>h.date.startsWith(prefix));
+            const summary={};
+            staffIds.forEach(id=>{if(id>0)summary[id]={id,total:0,des:0,desCount:0,cash:0,sign:0,coupon:0,customerCount:0,staff:0,store:0};});
+            let grand={total:0,des:0,desCount:0,cash:0,sign:0,coupon:0,customerCount:0,staff:0,store:0};
+            monthLogs.forEach(day=>{
+                (day.records||[]).forEach(r=>{
+                    const id=Number(r.id); if(id<=0)return;
+                    if(!summary[id])summary[id]={id,total:0,des:0,desCount:0,cash:0,sign:0,coupon:0,customerCount:0,staff:0,store:0};
+                    const stats=getAccountingStats(r.fullLogs||[]);
+                    Object.keys(stats).forEach(k=>{if(k in summary[id] && typeof summary[id][k]==='number')summary[id][k]+=stats[k];});
+                });
+            });
+            Object.values(summary).forEach(d=>{
+                grand.total+=d.total; grand.des+=d.des; grand.desCount+=(d.desCount||0); grand.cash+=d.cash; grand.sign+=d.sign; grand.coupon+=d.coupon; grand.customerCount+=d.customerCount; grand.staff+=d.staff; grand.store+=d.store;
+            });
+            const rows=[
+                [`${month}月收入`, '', '', '', '', ''],
+                ['真輕鬆', '', '', '', '', ''],
+                ['師傅','總計','收入','指名率','節數']
+            ];
+            const staffStartRow = rows.length + 1;
+            Object.values(summary).filter(d=>hasExcelStaffName(d.id)).sort((a,b)=>a.id-b.id).forEach(d=>{
+                const customerCount = d.customerCount || 0;
+                const desCount = d.desCount || 0;
+                rows.push([displayStaffNameForExcel(d.id),d.total,d.staff,customerCount>0?desCount/customerCount:0,d.total>0?(d.total/800).toFixed(1):0]);
+            });
+            const staffEndRow = rows.length;
+            rows.push([]);
+            rows.push(['店內總結']);
+            rows.push(['總業績',grand.total]);
+            rows.push(['店家收入',grand.store]);
+            rows.push(['總人數',grand.customerCount]);
+            rows.push(['現金總人數',grand.cash]);
+            rows.push(['簽名總人數',grand.sign]);
+            rows.push(['票卷總人數',grand.coupon]);
+            const ws=addAoaSheet(workbook,'月業績',rows,[22,14,14,12,10]);
+            formatExcelPercentColumn(ws, staffStartRow, staffEndRow, 'D');
+            ws['!freeze']={xSplit:1,ySplit:3};
+
+            const daysInMonth=new Date(year,month,0).getDate();
+            if(singleDay && targetRecord){
+                const d=Number(targetRecord.date.slice(-2));
+                buildDailyAccountingSheet(workbook,targetRecord.date,targetRecord,year,month,d);
+            } else {
+                for(let d=1;d<=daysInMonth;d++){
+                    const dateText=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const rec=historyData.find(h=>h.date===dateText)||null;
+                    buildDailyAccountingSheet(workbook,dateText,rec,year,month,d);
+                }
+            }
+
+            // Hidden backup: keeps exact HTML data so generated .xlsx can be imported back to HTML losslessly.
+            const backup=[];
+            backup.push(['資料集','索引','分段','分段總數','JSON內容']);
+            appendChunkedJsonRows(backup,'meta',0,{type:singleDay?'single-day':'full',exportTime:new Date().toISOString(),selectedYear:year,selectedMonth:month,savedOtherRate,savedOtherPaid});
+            if(singleDay && targetRecord){
+                appendChunkedJsonRows(backup,'record',0,targetRecord);
+            } else {
+                staffData.forEach((s,i)=>appendChunkedJsonRows(backup,'staffData',i,s));
+                historyData.forEach((h,i)=>appendChunkedJsonRows(backup,'historyData',i,h));
+                appendChunkedJsonRows(backup,'staffNames',0,staffNames);
+            }
+            const bws=addAoaSheet(workbook,'系統備份',backup,[18,10,10,12,80]);
+            bws['!state']='hidden';
+            return workbook;
+        }
+
+        function downloadXlsxWorkbook(workbook, filename) {
+            if(!ensureXlsxReady())return false;
+            XLSX.writeFile(workbook,filename,{bookType:'xlsx',compression:true});
+            return true;
         }
 
         function exportFullData() {
-            const data = {
-                type: 'full',
-                exportTime: new Date().toISOString(),
-                staffData,
-                historyData,
-                staffNames,
-                savedOtherRate,
-                savedOtherPaid
-            };
-            downloadJsonFile(data, `完整紀錄_${document.getElementById('todayDate').value}.json`);
-            showT('完整紀錄已匯出');
+            initReportFilters();
+            const y=document.getElementById('reportYear').value,m=document.getElementById('reportMonth').value;
+            if(downloadXlsxWorkbook(buildMonthlyWorkbook(y,m),`完整紀錄_${y}-${m}.xlsx`))showT('完整紀錄已匯出為 Excel');
         }
 
         function exportSingleDay() {
-            const targetDate = prompt('請輸入要匯出的日期 (格式：YYYY-MM-DD)', document.getElementById('todayDate').value);
-            if (!targetDate) return;
-
-            const targetHistory = historyData.find(h => h.date === targetDate);
-            if (!targetHistory) {
-                alert('找不到該日期紀錄');
-                return;
-            }
-
-            downloadJsonFile({
-                type: 'single-day',
-                exportTime: new Date().toISOString(),
-                date: targetDate,
-                record: targetHistory
-            }, `單日紀錄_${targetDate}.json`);
-
-            showT('單日紀錄已匯出');
+            if(!ensureXlsxReady())return;
+            const targetDate=prompt('請輸入要匯出的日期 (格式：YYYY-MM-DD)',document.getElementById('todayDate').value);
+            if(!targetDate)return;
+            const targetHistory=historyData.find(h=>h.date===targetDate);
+            if(!targetHistory)return alert('找不到該日期紀錄');
+            const y=targetDate.slice(0,4),m=targetDate.slice(5,7);
+            if(downloadXlsxWorkbook(buildMonthlyWorkbook(y,m,targetHistory,true),`單日紀錄_${targetDate}.xlsx`))showT('單日紀錄已匯出為 Excel');
         }
 
-        function importFullData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        function readXlsxFile(file){return file.arrayBuffer().then(buffer=>XLSX.read(buffer,{type:'array',cellDates:true}));}
+        function getInfoMap(workbook){ const ws=workbook.Sheets['系統資訊']; if(!ws)return null; const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''}); const map={};rows.forEach(row=>{if(row[0])map[String(row[0])]=row[1];});return map; }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
+        function normalizeImportedStaffData(input){
+            const arr=Array.isArray(input)?input:[];
+            const importedIds=arr.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0);
+            const ids=[...new Set([...staffIds,...importedIds,0,-1,-2])];
+            return ids.map(id=>arr.find(s=>Number(s.id)===Number(id))||{id,inRank:false,joinTime:0,bookings:[],logs:[]})
+                .map(s=>({...s,bookings:Array.isArray(s.bookings)?s.bookings:[],logs:Array.isArray(s.logs)?s.logs:[]}));
+        }
+        function replaceActiveStaffIdsFromData(){
+            const ids=[...new Set(staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0))];
+            staffIds.splice(0,staffIds.length,...ids);
+            ids.forEach(id=>{ if(!staffNames[id]) staffNames[id]={name:'',gender:defaultMale.includes(id)?'male':'female'}; });
+        }
+        function importGeneratedFullWorkbook(workbook){
+            const grouped=readChunkedJsonSheet(workbook,'系統備份');
+            const meta=grouped.meta&&grouped.meta[0];
+            if(!meta || meta.type!=='full' || !grouped.staffData || !grouped.historyData)return false;
+            if(!confirm('完整匯入會覆蓋目前所有資料，確定繼續？'))return true;
+            staffNames=grouped.staffNames&&grouped.staffNames[0]?grouped.staffNames[0]:{};
+            staffData=normalizeImportedStaffData(grouped.staffData);
+            replaceActiveStaffIdsFromData();
+            historyData=grouped.historyData||[];
+            savedOtherRate=Number(meta.savedOtherRate)||75;
+            savedOtherPaid=meta.savedOtherPaid!==false;
+            ensureStaffNames();
+            save();render();openReport();showT('完整 Excel 資料匯入成功');return true;
+        }
+        function importGeneratedSingleDayWorkbook(workbook){
+            const grouped=readChunkedJsonSheet(workbook,'系統備份');
+            const meta=grouped.meta&&grouped.meta[0], record=grouped.record&&grouped.record[0];
+            if(!meta || meta.type!=='single-day' || !record || !record.date)return false;
+            const existingIndex=historyData.findIndex(h=>h.date===record.date);
+            if(existingIndex>-1)historyData[existingIndex]=record;else historyData.push(record);
+            save();render();openReport();showT(`${record.date} 單日 Excel 紀錄已匯入`);return true;
+        }
+        function legacyCellNumber(v){ if(v===null||v===undefined||v==='')return null; if(typeof v==='number'&&Number.isFinite(v))return v; const n=Number(String(v).replace(/[$, ]/g,''));return Number.isFinite(n)?n:null; }
 
-                    if (data.type !== 'full') {
-                        alert('匯入檔案格式錯誤');
-                        return;
+        function importLegacyFinancialWorkbook(workbook){
+            if(!workbook.SheetNames.includes('月業績'))return null;
+            const daySheets=workbook.SheetNames.filter(n=>/^\d{1,2}$/.test(n)).sort((a,b)=>Number(a)-Number(b)); if(!daySheets.length)return null;
+            const importedHistory=[],importedNames={};
+            daySheets.forEach(sheetName=>{
+                const ws=workbook.Sheets[sheetName],rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+                const head=rows[1]&&rows[1][0]?String(rows[1][0]):''; const m=head.match(/(\d{2,4})年\s*(\d{1,2})月\s*(\d{1,2})日/); if(!m)return;
+                let year=Number(m[1]); if(year<1911)year+=1911; const dateText=`${year}-${String(Number(m[2])).padStart(2,'0')}-${String(Number(m[3])).padStart(2,'0')}`;
+                const recordMap={};
+                for(let block=0;block<7;block++){
+                    const start=2+block*14;
+                    for(let group=0;group<3;group++){
+                        const c=group*6,nameRaw=rows[start]&&rows[start][c+1]; if(!nameRaw)continue;
+                        const displayText=String(nameRaw).trim(); const idMatch=displayText.match(/(?:-?)(\d+)號(?:\s|$)/); let id=idMatch?Number(idMatch[1]):null; let displayName=displayText.replace(/-\d+號$/,'').replace(/^\d+號\s*/,'').trim();
+                        if(!id){ const foundId=Object.keys(staffNames).find(k=>staffNames[k]&&typeof staffNames[k]==='object'&&staffNames[k].name===displayName); id=foundId?Number(foundId):null; }
+                        if(!id||id<=0)continue;
+                        importedNames[id]=displayName; if(!staffNames[id])staffNames[id]={name:displayName,gender:defaultMale.includes(id)?'male':'female'};
+                        const logs=[];
+                        for(let rr=start+2;rr<=start+11;rr++){
+                            const row=rows[rr]||[]; const desAmt=legacyCellNumber(row[c+1]),normalAmt=legacyCellNumber(row[c+2]),cash=legacyCellNumber(row[c+3]),sign=legacyCellNumber(row[c+4]),coupon=legacyCellNumber(row[c+5]);
+                            const hasData=[desAmt,normalAmt,cash,sign,coupon].some(v=>v!==null); if(!hasData)continue;
+                            let amt=desAmt; if(amt===null)amt=normalAmt;if(amt===null)amt=cash;if(amt===null)amt=sign;if(amt===null)amt=coupon; if(amt===null||amt<0)continue;
+                            logs.push({amt,isD:desAmt!==null&&desAmt>0,isP:sign!==null&&sign>0,isC:coupon!==null&&coupon>0,isExtra:false,oilS:false,oilB:false,isPri:false,otherC:false,otherRate:null,otherPaid:false,discount9:false,time:''});
+                        }
+                        if(logs.length)recordMap[id]={id,totalAmt:logs.reduce((sum,l)=>sum+l.amt,0),desAmt:logs.filter(l=>l.isD).reduce((sum,l)=>sum+l.amt,0),fullLogs:logs};
                     }
-
-                    if (!confirm('完整匯入會覆蓋目前所有資料，確定繼續？')) return;
-
-                    staffData = data.staffData || [];
-                    historyData = data.historyData || [];
-                    staffNames = data.staffNames || {};
-                    savedOtherRate = data.savedOtherRate || 75;
-                    savedOtherPaid = data.savedOtherPaid !== false;
-
-                    save();
-                    render();
-                    openReport();
-                    showT('完整資料匯入成功');
-                } catch(err) {
-                    alert('匯入失敗：檔案格式錯誤');
                 }
-
-                event.target.value = '';
-            };
-            reader.readAsText(file);
+                const records=Object.values(recordMap).sort((a,b)=>Number(a.id)-Number(b.id));
+                importedHistory.push({date:dateText,records});
+            });
+            return importedHistory.length?{historyData:importedHistory,importedNames}:null;
         }
 
-        function importSingleDay(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-
-                    if (data.type !== 'single-day' || !data.record || !data.date) {
-                        alert('匯入檔案格式錯誤');
-                        return;
-                    }
-
-                    const existingIndex = historyData.findIndex(h => h.date === data.date);
-
-                    if (existingIndex > -1) {
-                        historyData[existingIndex] = data.record;
-                    } else {
-                        historyData.push(data.record);
-                    }
-
-                    save();
-                    render();
-                    openReport();
-                    showT(`${data.date} 單日紀錄已匯入`);
-                } catch(err) {
-                    alert('匯入失敗：檔案格式錯誤');
-                }
-
-                event.target.value = '';
-            };
-            reader.readAsText(file);
+        function importFullData(event){
+            const file=event.target.files[0]; if(!file)return;
+            if(!ensureXlsxReady()){event.target.value='';return;}
+            readXlsxFile(file).then(workbook=>{
+                if(importGeneratedFullWorkbook(workbook))return;
+                const legacy=importLegacyFinancialWorkbook(workbook); if(!legacy)return alert('匯入失敗：找不到可辨識的 Excel 業績資料。');
+                if(!confirm('這是既有的「月業績／每日收入」Excel。匯入後會建立可辨識的歷史業績；預約與原本的排班狀態不會從這種舊報表還原。\n\n確定匯入嗎？'))return;
+                historyData=legacy.historyData;
+                Object.keys(legacy.importedNames).forEach(id=>{
+                    const n=Number(id);
+                    if(n>0 && !staffIds.includes(n)) staffIds.push(n);
+                    if(!staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
+                    staffNames[id]=staffNames[id]||{name:legacy.importedNames[id],gender:defaultMale.includes(n)?'male':'female'};
+                });
+                ensureStaffNames();save();render();openReport();showT('既有 Excel 財務報表已匯入');
+            }).catch(err=>{console.error(err);alert('匯入失敗：Excel 檔案無法讀取或格式錯誤。');}).finally(()=>{event.target.value='';});
+        }
+        function importSingleDay(event){
+            const file=event.target.files[0]; if(!file)return;
+            if(!ensureXlsxReady()){event.target.value='';return;}
+            readXlsxFile(file).then(workbook=>{
+                if(importGeneratedSingleDayWorkbook(workbook))return;
+                const legacy=importLegacyFinancialWorkbook(workbook); if(!legacy)return alert('匯入失敗：找不到可辨識的 Excel 業績資料。');
+                const targetDate=prompt('請輸入要匯入的日期 (格式：YYYY-MM-DD)',document.getElementById('todayDate').value); if(!targetDate)return;
+                const found=legacy.historyData.find(h=>h.date===targetDate); if(!found)return alert('這份 Excel 中找不到指定日期的可辨識資料');
+                const idx=historyData.findIndex(h=>h.date===targetDate); if(idx>-1)historyData[idx]=found;else historyData.push(found);
+                Object.keys(legacy.importedNames).forEach(id=>{
+                    const n=Number(id);
+                    if(n>0 && !staffIds.includes(n)) staffIds.push(n);
+                    if(!staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
+                    staffNames[id]=staffNames[id]||{name:legacy.importedNames[id],gender:defaultMale.includes(n)?'male':'female'};
+                });
+                ensureStaffNames(); save();render();openReport();showT(`${targetDate} 單日 Excel 紀錄已匯入`);
+            }).catch(err=>{console.error(err);alert('匯入失敗：Excel 檔案無法讀取或格式錯誤。');}).finally(()=>{event.target.value='';});
         }
 
-function openReport() {
+        function openReport() {
             initReportFilters();
             document.getElementById('btnHistoryView').style.display = 'block';
             document.getElementById('btnReportBack').style.display = 'none';
@@ -956,16 +1216,99 @@ function openReport() {
             document.getElementById('bookStaffSpecial').innerHTML = specialIds.map(id => { const c = specialCounts[id]; return `<div class="staff-btn staff-btn-sm ${c > 0 ? 'active' : ''}" style="position:relative;" onclick="openPerson(${id})">${getSpecialName(id)}${c > 0 ? `<div class="count-badge">${c}</div>` : ''}</div>`; }).join('');
             let selText = []; selIds.forEach(id => selText.push(getStaffDisplayName(id))); specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
             document.getElementById('selNumDisp').innerText = selText.length > 0 ? selText.join(', ') : '請選擇';
-            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>{ const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀'; const gClass = getStaffGender(s.id) === 'male' ? 'gender-male' : 'gender-female'; return `<div class="staff-btn ${s.inRank?'active':''}" onclick="tRank(${s.id})" ondblclick="renameStaff(${s.id})">${getStaffDisplayName(s.id)}<span class="${gClass}" style="display:block; font-size:16px;">${gMarker}</span></div>` }).join('');
+            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>{ const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀'; const gClass = getStaffGender(s.id) === 'male' ? 'gender-male' : 'gender-female'; return `<div class="staff-btn ${s.inRank?'active':''}" onclick="tRank(${s.id})" ondblclick="renameStaff(${s.id})">${Number(s.id)}號<span class="${gClass}" style="display:block; font-size:16px;">${gMarker}</span></div>` }).join('');
             updateSettleAndList();
         }
 
-        function renameStaff(id) { const oldName = getStaffDisplayName(id);
-            const newName = prompt(`修改 ${oldName} 的顯示名稱：`, oldName); if(newName !== null && newName.trim() !== "") { renamingStaffId = id;
-            staffNames[id].name = newName.trim(); document.getElementById('genderTitle').innerText = `設定 ${newName.trim()} 的性別`; document.getElementById('genderModal').style.display = 'flex';
-            } }
-        function setStaffGender(gender) { if(renamingStaffId && staffNames[renamingStaffId]) { staffNames[renamingStaffId].gender = gender; save();
-            closeM('genderModal'); renamingStaffId = null; showT('資料已更新'); } }
+        function renameStaff(id) {
+            renamingStaffId = Number(id);
+            const numberEl = document.getElementById('staffEditNumber');
+            const nameEl = document.getElementById('staffEditName');
+            if(numberEl) numberEl.value = Number(id);
+            if(nameEl) nameEl.value = staffNames[id] && typeof staffNames[id] === 'object' && staffNames[id].name && isRealStaffName(staffNames[id].name, id) ? staffNames[id].name : '';
+            document.getElementById('staffEditModal').style.display = 'flex';
+        }
+        function openAddStaff() {
+            renamingStaffId = null;
+            const numberEl = document.getElementById('staffEditNumber');
+            const nameEl = document.getElementById('staffEditName');
+            if(numberEl) { numberEl.value = ''; numberEl.placeholder = '例如 15'; }
+            if(nameEl) { nameEl.value = ''; nameEl.placeholder = '例如 王小明'; }
+            const title = document.querySelector('#staffEditModal h3');
+            if(title) title.innerText = '新增師傅';
+            const saveBtn = document.querySelector('#staffEditModal button[onclick="saveStaffEdit()"]');
+            if(saveBtn) saveBtn.innerText = '新增';
+            document.getElementById('staffEditModal').style.display = 'flex';
+        }
+
+        function removeStaff() {
+            const raw = prompt('請輸入要移除的師傅號碼，例如 15');
+            if(raw === null) return;
+            const id = Number(String(raw).trim());
+            if(!Number.isInteger(id) || id <= 0) return alert('師傅號碼必須是正整數');
+            if(!staffIds.includes(id)) return alert('找不到這個師傅號碼');
+            const staff = staffData.find(s=>Number(s.id)===id);
+            const hasLogs = !!(staff && Array.isArray(staff.logs) && staff.logs.length);
+            const hasBookings = !!(staff && Array.isArray(staff.bookings) && staff.bookings.length);
+            const warning = hasLogs || hasBookings ? '\n這位師傅目前還有未結束的帳目或預約，移除後今天的資料將不再出現在師傅畫面，但歷史帳目仍會保留。' : '';
+            if(!confirm(`確定移除 ${id}號嗎？${warning}`)) return;
+            staffIds.splice(staffIds.indexOf(id),1);
+            staffData = staffData.filter(s=>Number(s.id)!==id);
+            save();
+            render();
+            showT(`${id}號已從師傅選單移除`);
+        }
+
+
+        function saveStaffEdit() {
+            const isAdding = renamingStaffId === null;
+            const oldId = isAdding ? null : Number(renamingStaffId);
+            const numberEl = document.getElementById('staffEditNumber');
+            const nameEl = document.getElementById('staffEditName');
+            const newId = Number(numberEl?.value);
+            const newName = (nameEl?.value || '').trim();
+            if(!Number.isInteger(newId) || newId <= 0) return alert('師傅號碼必須是正整數');
+            if(staffIds.includes(newId) && (isAdding || newId !== oldId)) return alert('這個師傅號碼已存在，請改用其他號碼');
+
+            if(isAdding) {
+                staffIds.push(newId);
+                staffData.push({id:newId,inRank:false,joinTime:getTW().getTime(),bookings:[],logs:[]});
+                staffNames[newId] = {name:newName,gender:defaultMale.includes(newId)?'male':'female'};
+            } else {
+                if(!staffNames[oldId]) staffNames[oldId] = {name:'', gender: defaultMale.includes(oldId) ? 'male' : 'female'};
+                if(newId !== oldId) {
+                    const staff = staffData.find(s=>Number(s.id)===oldId);
+                    if(staff) staff.id = newId;
+                    historyData.forEach(h => (h.records||[]).forEach(r => { if(Number(r.id)===oldId) r.id = newId; }));
+                    staffNames[newId] = staffNames[oldId];
+                    delete staffNames[oldId];
+                    const idx = staffIds.indexOf(oldId);
+                    if(idx >= 0) staffIds[idx] = newId;
+                }
+                staffNames[newId] = staffNames[newId] || {name:'', gender: defaultMale.includes(newId) ? 'male' : 'female'};
+                staffNames[newId].name = newName;
+            }
+
+            renamingStaffId = newId;
+            save();
+            closeM('staffEditModal');
+            const title = document.querySelector('#staffEditModal h3');
+            if(title) title.innerText = '修改師傅資料';
+            const saveBtn = document.querySelector('#staffEditModal button[onclick="saveStaffEdit()"]');
+            if(saveBtn) saveBtn.innerText = '儲存';
+            numberEl.placeholder = '例如 2';
+            nameEl.placeholder = '例如 宋則憲';
+            document.getElementById('genderTitle').innerText = `設定 ${newId}號的性別`;
+            document.getElementById('genderModal').style.display = 'flex';
+            render();
+        }
+
+        function setStaffGender(gender) {
+            if(renamingStaffId && staffNames[renamingStaffId]) {
+                staffNames[renamingStaffId].gender = gender; save();
+                closeM('genderModal'); renamingStaffId = null; showT('資料已更新');
+            }
+        }
         function openPerson(id) { tempSpecId = id;
             document.getElementById('personTitle').innerText = `選擇「${getSpecialName(id)}」人數`; document.getElementById('personModal').style.display = 'flex'; }
         function setPersonCount(count) { specialCounts[tempSpecId] = count;
