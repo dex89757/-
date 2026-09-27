@@ -282,7 +282,8 @@
         const extraNames = ["A", "B", "C", "D", "E", "F", "G"];
         const extendedIds = [1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101];
         const staffIds = extendedIds;
-        const permanentlyRemovedIds = new Set([901,902,903,904,905,906,907]);
+        const legacyDefaultIds = new Set([901,902,903,904,905,906,907]);
+        let removedStaffIds = new Set(JSON.parse(localStorage.getItem('massageRemovedStaffIds') || '[]').map(Number).filter(Number.isInteger));
         
         const specialIds = [0, -1, -2]; 
         const getSpecialName = (id) => id === 0 ? '不指定' : (id === -1 ? '指男' : '指女');
@@ -306,7 +307,7 @@
         let staffNames = JSON.parse(localStorage.getItem('massageStaffNames')) || {};
         const savedStaffRoster = JSON.parse(localStorage.getItem('massageStaffIds') || 'null');
         if(Array.isArray(savedStaffRoster) && savedStaffRoster.length) {
-            const validRoster=[...new Set(savedStaffRoster.map(Number).filter(id=>Number.isInteger(id) && id>0))];
+            const validRoster=[...new Set(savedStaffRoster.map(Number).filter(id=>Number.isInteger(id) && id>0 && !removedStaffIds.has(id)))];
             staffIds.splice(0,staffIds.length,...validRoster);
         }
         staffIds.forEach((id, index) => {
@@ -327,9 +328,9 @@
         const getFemaleIds = () => staffIds.filter(id => getStaffGender(id) === 'female');
         let staffData = JSON.parse(localStorage.getItem('massageData')) || [];
         let historyData = JSON.parse(localStorage.getItem('massageHistory')) || [];
-        const persistedStaffIds = Array.isArray(staffData) ? staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !permanentlyRemovedIds.has(id)) : [];
+        const persistedStaffIds = Array.isArray(staffData) ? staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !removedStaffIds.has(id)) : [];
         persistedStaffIds.forEach(id=>{ if(!staffIds.includes(id)) staffIds.push(id); });
-        staffData = (Array.isArray(staffData) ? staffData : []).filter(s=>!permanentlyRemovedIds.has(Number(s.id)));
+        staffData = (Array.isArray(staffData) ? staffData : []).filter(s=>!removedStaffIds.has(Number(s.id)));
         const allPossibleIds = [...new Set([...staffIds, 0, -1, -2])];
         staffData = allPossibleIds.map(id => staffData.find(s=>Number(s.id)===Number(id)) || {id, inRank:false, joinTime:0, bookings:[], logs:[]});
         staffIds.forEach(id=>{
@@ -347,6 +348,7 @@
             localStorage.setItem('massageHistory', JSON.stringify(historyData)); 
             localStorage.setItem('massageStaffNames', JSON.stringify(staffNames));
             localStorage.setItem('massageStaffIds', JSON.stringify(staffIds));
+            localStorage.setItem('massageRemovedStaffIds', JSON.stringify([...removedStaffIds]));
         };
         
         function handleGlobalClick(e) {
@@ -793,7 +795,7 @@
             // Hidden backup: keeps exact HTML data so generated .xlsx can be imported back to HTML losslessly.
             const backup=[];
             backup.push(['資料集','索引','分段','分段總數','JSON內容']);
-            appendChunkedJsonRows(backup,'meta',0,{type:singleDay?'single-day':'full',exportTime:new Date().toISOString(),selectedYear:year,selectedMonth:month,savedOtherRate,savedOtherPaid});
+            appendChunkedJsonRows(backup,'meta',0,{type:singleDay?'single-day':'full',exportTime:new Date().toISOString(),selectedYear:year,selectedMonth:month,savedOtherRate,savedOtherPaid,removedStaffIds:[...removedStaffIds]});
             if(singleDay && targetRecord){
                 appendChunkedJsonRows(backup,'record',0,targetRecord);
             } else {
@@ -833,13 +835,13 @@
 
         function normalizeImportedStaffData(input){
             const arr=Array.isArray(input)?input:[];
-            const importedIds=arr.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !permanentlyRemovedIds.has(id));
+            const importedIds=arr.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !removedStaffIds.has(id));
             const ids=[...new Set([...staffIds,...importedIds,0,-1,-2])];
             return ids.map(id=>arr.find(s=>Number(s.id)===Number(id))||{id,inRank:false,joinTime:0,bookings:[],logs:[]})
                 .map(s=>({...s,bookings:Array.isArray(s.bookings)?s.bookings:[],logs:Array.isArray(s.logs)?s.logs:[]}));
         }
         function replaceActiveStaffIdsFromData(){
-            const ids=[...new Set(staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !permanentlyRemovedIds.has(id)))];
+            const ids=[...new Set(staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !removedStaffIds.has(id)))];
             staffIds.splice(0,staffIds.length,...ids);
             ids.forEach(id=>{ if(!staffNames[id]) staffNames[id]={name:'',gender:defaultMale.includes(id)?'male':'female'}; });
         }
@@ -849,6 +851,8 @@
             if(!meta || meta.type!=='full' || !grouped.staffData || !grouped.historyData)return false;
             if(!confirm('完整匯入會覆蓋目前所有資料，確定繼續？'))return true;
             staffNames=grouped.staffNames&&grouped.staffNames[0]?grouped.staffNames[0]:{};
+            const importedRemoved=(Array.isArray(meta.removedStaffIds)?meta.removedStaffIds:[]).map(Number).filter(Number.isInteger);
+            removedStaffIds=new Set(importedRemoved);
             staffData=normalizeImportedStaffData(grouped.staffData);
             replaceActiveStaffIdsFromData();
             historyData=grouped.historyData||[];
@@ -882,7 +886,7 @@
                         const c=group*6,nameRaw=rows[start]&&rows[start][c+1]; if(!nameRaw)continue;
                         const displayText=String(nameRaw).trim(); const idMatch=displayText.match(/(?:-?)(\d+)號(?:\s|$)/); let id=idMatch?Number(idMatch[1]):null; let displayName=displayText.replace(/-\d+號$/,'').replace(/^\d+號\s*/,'').trim();
                         if(!id){ const foundId=Object.keys(staffNames).find(k=>staffNames[k]&&typeof staffNames[k]==='object'&&staffNames[k].name===displayName); id=foundId?Number(foundId):null; }
-                        if(!id||id<=0||permanentlyRemovedIds.has(id))continue;
+                        if(!id||id<=0||removedStaffIds.has(id))continue;
                         importedNames[id]=displayName; if(!staffNames[id])staffNames[id]={name:displayName,gender:defaultMale.includes(id)?'male':'female'};
                         const logs=[];
                         for(let rr=start+2;rr<=start+11;rr++){
@@ -910,8 +914,8 @@
                 historyData=legacy.historyData;
                 Object.keys(legacy.importedNames).forEach(id=>{
                     const n=Number(id);
-                    if(n>0 && !permanentlyRemovedIds.has(n) && !staffIds.includes(n)) staffIds.push(n);
-                    if(n>0 && !permanentlyRemovedIds.has(n) && !staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
+                    if(n>0 && !removedStaffIds.has(n) && !staffIds.includes(n)) staffIds.push(n);
+                    if(n>0 && !removedStaffIds.has(n) && !staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
                     staffNames[id]=staffNames[id]||{name:legacy.importedNames[id],gender:defaultMale.includes(n)?'male':'female'};
                 });
                 ensureStaffNames();save();render();openReport();showT('既有 Excel 財務報表已匯入');
@@ -928,8 +932,8 @@
                 const idx=historyData.findIndex(h=>h.date===targetDate); if(idx>-1)historyData[idx]=found;else historyData.push(found);
                 Object.keys(legacy.importedNames).forEach(id=>{
                     const n=Number(id);
-                    if(n>0 && !permanentlyRemovedIds.has(n) && !staffIds.includes(n)) staffIds.push(n);
-                    if(n>0 && !permanentlyRemovedIds.has(n) && !staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
+                    if(n>0 && !removedStaffIds.has(n) && !staffIds.includes(n)) staffIds.push(n);
+                    if(n>0 && !removedStaffIds.has(n) && !staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
                     staffNames[id]=staffNames[id]||{name:legacy.importedNames[id],gender:defaultMale.includes(n)?'male':'female'};
                 });
                 ensureStaffNames(); save();render();openReport();showT(`${targetDate} 單日 Excel 紀錄已匯入`);
@@ -1252,7 +1256,7 @@
         }
 
         function removeStaff() {
-            const ids = staffIds.filter(id => Number(id) > 0 && !permanentlyRemovedIds.has(Number(id))).sort((a,b)=>Number(a)-Number(b));
+            const ids = staffIds.filter(id => Number(id) > 0).sort((a,b)=>Number(a)-Number(b));
             const box = document.getElementById('removeStaffGrid');
             if (!box) return alert('找不到移除師傅視窗');
             box.innerHTML = ids.map(id => `
@@ -1264,7 +1268,7 @@
 
         function confirmRemoveStaff(id) {
             id = Number(id);
-            if (!Number.isInteger(id) || id <= 0 || permanentlyRemovedIds.has(id)) return;
+            if (!Number.isInteger(id) || id <= 0) return;
             if (!staffIds.includes(id)) return alert('找不到這個師傅號碼');
             const staff = staffData.find(s => Number(s.id) === id);
             const hasLogs = !!(staff && Array.isArray(staff.logs) && staff.logs.length);
@@ -1274,6 +1278,7 @@
                 : '';
             if (!confirm(`確定移除 ${id} 號嗎？${warning}`)) return;
             staffIds.splice(staffIds.indexOf(id), 1);
+            removedStaffIds.add(id);
             staffData = staffData.filter(s => Number(s.id) !== id);
             // 保留歷史紀錄與姓名資料，避免舊帳對不到人；只從現役名單移除。
             localStorage.setItem('massageStaffIds', JSON.stringify(staffIds));
@@ -1295,12 +1300,14 @@
             if(staffIds.includes(newId) && (isAdding || newId !== oldId)) return alert('這個師傅號碼已存在，請改用其他號碼');
 
             if(isAdding) {
+                removedStaffIds.delete(newId);
                 staffIds.push(newId);
                 staffData.push({id:newId,inRank:false,joinTime:getTW().getTime(),bookings:[],logs:[]});
                 staffNames[newId] = {name:newName,gender:defaultMale.includes(newId)?'male':'female'};
             } else {
                 if(!staffNames[oldId]) staffNames[oldId] = {name:'', gender: defaultMale.includes(oldId) ? 'male' : 'female'};
                 if(newId !== oldId) {
+                    removedStaffIds.delete(newId);
                     const staff = staffData.find(s=>Number(s.id)===oldId);
                     if(staff) staff.id = newId;
                     historyData.forEach(h => (h.records||[]).forEach(r => { if(Number(r.id)===oldId) r.id = newId; }));
