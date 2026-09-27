@@ -270,17 +270,25 @@
         <button class="btn-action" style="background:#333; margin-top:10px;" onclick="closeM('reportModal')">關閉報表</button>
     </div></div>
 
+
+    <div id="removeStaffModal" class="modal"><div class="modal-content">
+        <h3>➖ 移除師傅</h3>
+        <div style="color:#888; font-size:14px; margin-bottom:12px;">點選要移除的師傅號碼</div>
+        <div id="removeStaffGrid" class="staff-grid" style="max-height:360px; overflow:auto;"></div>
+        <button class="btn-action" style="background:#333; margin-top:12px;" onclick="closeM('removeStaffModal')">取消</button>
+    </div></div>
     <script>
         const baseStaffIds = [0, 1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101];
         const extraNames = ["A", "B", "C", "D", "E", "F", "G"];
-        const extendedIds = [1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101, 901, 902, 903, 904, 905, 906, 907];
+        const extendedIds = [1, 2, 5, 7, 9, 10, 11, 12, 13, 38, 100, 101];
         const staffIds = extendedIds;
+        const permanentlyRemovedIds = new Set([901,902,903,904,905,906,907]);
         
         const specialIds = [0, -1, -2]; 
         const getSpecialName = (id) => id === 0 ? '不指定' : (id === -1 ? '指男' : '指女');
         
-        const defaultMale = [1, 5, 7, 9, 10, 11, 12, 13, 901, 902, 903];
-        const defaultFemale = [2, 38, 100, 101, 904, 905, 906, 907];
+        const defaultMale = [1, 5, 7, 9, 10, 11, 12, 13];
+        const defaultFemale = [2, 38, 100, 101];
 
         let selIds=[], isBoss=false, editBookId=null, matchSels=[]; 
         let mode={des:false, extra:false, sign:false, coupon:false, oilS:false, oilB:false, private:false, otherC:false, discount9:false};
@@ -313,13 +321,15 @@
             }
         });
         const getStaffDisplayName = (id) => Number(id) > 0 ? `${Number(id)}號` : getSpecialName(Number(id));
+        const getStaffShortLabel = (id) => Number(id) > 0 ? `${Number(id)}` : getSpecialName(Number(id));
         const getStaffGender = (id) => staffNames[id] ? staffNames[id].gender : 'male';
         const getMaleIds = () => staffIds.filter(id => getStaffGender(id) === 'male');
         const getFemaleIds = () => staffIds.filter(id => getStaffGender(id) === 'female');
         let staffData = JSON.parse(localStorage.getItem('massageData')) || [];
         let historyData = JSON.parse(localStorage.getItem('massageHistory')) || [];
-        const persistedStaffIds = Array.isArray(staffData) ? staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0) : [];
+        const persistedStaffIds = Array.isArray(staffData) ? staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !permanentlyRemovedIds.has(id)) : [];
         persistedStaffIds.forEach(id=>{ if(!staffIds.includes(id)) staffIds.push(id); });
+        staffData = (Array.isArray(staffData) ? staffData : []).filter(s=>!permanentlyRemovedIds.has(Number(s.id)));
         const allPossibleIds = [...new Set([...staffIds, 0, -1, -2])];
         staffData = allPossibleIds.map(id => staffData.find(s=>Number(s.id)===Number(id)) || {id, inRank:false, joinTime:0, bookings:[], logs:[]});
         staffIds.forEach(id=>{
@@ -823,13 +833,13 @@
 
         function normalizeImportedStaffData(input){
             const arr=Array.isArray(input)?input:[];
-            const importedIds=arr.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0);
+            const importedIds=arr.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !permanentlyRemovedIds.has(id));
             const ids=[...new Set([...staffIds,...importedIds,0,-1,-2])];
             return ids.map(id=>arr.find(s=>Number(s.id)===Number(id))||{id,inRank:false,joinTime:0,bookings:[],logs:[]})
                 .map(s=>({...s,bookings:Array.isArray(s.bookings)?s.bookings:[],logs:Array.isArray(s.logs)?s.logs:[]}));
         }
         function replaceActiveStaffIdsFromData(){
-            const ids=[...new Set(staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0))];
+            const ids=[...new Set(staffData.map(s=>Number(s.id)).filter(id=>Number.isInteger(id) && id>0 && !permanentlyRemovedIds.has(id)))];
             staffIds.splice(0,staffIds.length,...ids);
             ids.forEach(id=>{ if(!staffNames[id]) staffNames[id]={name:'',gender:defaultMale.includes(id)?'male':'female'}; });
         }
@@ -872,7 +882,7 @@
                         const c=group*6,nameRaw=rows[start]&&rows[start][c+1]; if(!nameRaw)continue;
                         const displayText=String(nameRaw).trim(); const idMatch=displayText.match(/(?:-?)(\d+)號(?:\s|$)/); let id=idMatch?Number(idMatch[1]):null; let displayName=displayText.replace(/-\d+號$/,'').replace(/^\d+號\s*/,'').trim();
                         if(!id){ const foundId=Object.keys(staffNames).find(k=>staffNames[k]&&typeof staffNames[k]==='object'&&staffNames[k].name===displayName); id=foundId?Number(foundId):null; }
-                        if(!id||id<=0)continue;
+                        if(!id||id<=0||permanentlyRemovedIds.has(id))continue;
                         importedNames[id]=displayName; if(!staffNames[id])staffNames[id]={name:displayName,gender:defaultMale.includes(id)?'male':'female'};
                         const logs=[];
                         for(let rr=start+2;rr<=start+11;rr++){
@@ -900,8 +910,8 @@
                 historyData=legacy.historyData;
                 Object.keys(legacy.importedNames).forEach(id=>{
                     const n=Number(id);
-                    if(n>0 && !staffIds.includes(n)) staffIds.push(n);
-                    if(!staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
+                    if(n>0 && !permanentlyRemovedIds.has(n) && !staffIds.includes(n)) staffIds.push(n);
+                    if(n>0 && !permanentlyRemovedIds.has(n) && !staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
                     staffNames[id]=staffNames[id]||{name:legacy.importedNames[id],gender:defaultMale.includes(n)?'male':'female'};
                 });
                 ensureStaffNames();save();render();openReport();showT('既有 Excel 財務報表已匯入');
@@ -918,8 +928,8 @@
                 const idx=historyData.findIndex(h=>h.date===targetDate); if(idx>-1)historyData[idx]=found;else historyData.push(found);
                 Object.keys(legacy.importedNames).forEach(id=>{
                     const n=Number(id);
-                    if(n>0 && !staffIds.includes(n)) staffIds.push(n);
-                    if(!staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
+                    if(n>0 && !permanentlyRemovedIds.has(n) && !staffIds.includes(n)) staffIds.push(n);
+                    if(n>0 && !permanentlyRemovedIds.has(n) && !staffData.some(s=>Number(s.id)===n)) staffData.push({id:n,inRank:false,joinTime:0,bookings:[],logs:[]});
                     staffNames[id]=staffNames[id]||{name:legacy.importedNames[id],gender:defaultMale.includes(n)?'male':'female'};
                 });
                 ensureStaffNames(); save();render();openReport();showT(`${targetDate} 單日 Excel 紀錄已匯入`);
@@ -1209,14 +1219,14 @@
                 div.style.borderColor = hasBusy ? 'var(--red)' : (hasTentative ? 'var(--yellow)' : 'var(--green)');
                 div.onclick=()=>{ selIds=[s.id]; document.getElementById('actTitle').innerText=getStaffDisplayName(s.id); resetModes(); document.getElementById('actModal').style.display='flex'; };
                 const gMarker = getStaffGender(s.id) === 'male' ? '<span class="gender-male">♂</span>' : '<span class="gender-female">♀</span>';
-                div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:28px;margin-right:15px;font-weight:bold;width:60px;overflow:hidden;">${getStaffDisplayName(s.id)}${gMarker}</span><div style="display:flex; flex-direction:column; gap:1px;">${displayHtml}</div></div><b style="font-size:26px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
+                div.innerHTML=`<div style="display:flex;align-items:center;"><span style="font-size:28px;margin-right:15px;font-weight:bold;width:60px;overflow:hidden;">${getStaffShortLabel(s.id)}${gMarker}</span><div style="display:flex; flex-direction:column; gap:1px;">${displayHtml}</div></div><b style="font-size:26px;color:var(--green);">$${s.logs.filter(l=>!l.isExtra).reduce((n,l)=>n+l.amt,0)}</b>`;
                 rA.appendChild(div);
             });
-            document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=> `<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${getStaffDisplayName(s.id)}<span style="font-size:12px; opacity:0.6; display:block;">${getStaffGender(s.id) === 'male' ? '♂' : '♀'}</span></div>`).join('');
+            document.getElementById('bookStaffGrid').innerHTML = staffData.filter(s=>s.id>0).map(s=> `<div class="staff-btn staff-btn-sm ${selIds.includes(s.id)?'active':''}" onclick="tBookSel(${s.id})">${getStaffShortLabel(s.id)}<span style="font-size:12px; opacity:0.6; display:block;">${getStaffGender(s.id) === 'male' ? '♂' : '♀'}</span></div>`).join('');
             document.getElementById('bookStaffSpecial').innerHTML = specialIds.map(id => { const c = specialCounts[id]; return `<div class="staff-btn staff-btn-sm ${c > 0 ? 'active' : ''}" style="position:relative;" onclick="openPerson(${id})">${getSpecialName(id)}${c > 0 ? `<div class="count-badge">${c}</div>` : ''}</div>`; }).join('');
             let selText = []; selIds.forEach(id => selText.push(getStaffDisplayName(id))); specialIds.forEach(id => { if(specialCounts[id] > 0) selText.push(`${getSpecialName(id)} x${specialCounts[id]}`); });
-            document.getElementById('selNumDisp').innerText = selText.length > 0 ? selText.join(', ') : '請選擇';
-            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>{ const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀'; const gClass = getStaffGender(s.id) === 'male' ? 'gender-male' : 'gender-female'; return `<div class="staff-btn ${s.inRank?'active':''}" onclick="tRank(${s.id})" ondblclick="renameStaff(${s.id})">${Number(s.id)}號<span class="${gClass}" style="display:block; font-size:16px;">${gMarker}</span></div>` }).join('');
+            document.getElementById('selNumDisp').innerText = selText.length > 0 ? selIds.map(id=>getStaffShortLabel(id)).concat(specialIds.filter(id=>specialCounts[id]>0).map(id=>`${getSpecialName(id)} x${specialCounts[id]}`)).join(', ') : '請選擇';
+            document.getElementById('staffGridOn').innerHTML = staffData.filter(s=>s.id>0).map(s=>{ const gMarker = getStaffGender(s.id) === 'male' ? '♂' : '♀'; const gClass = getStaffGender(s.id) === 'male' ? 'gender-male' : 'gender-female'; return `<div class="staff-btn ${s.inRank?'active':''}" onclick="tRank(${s.id})" ondblclick="renameStaff(${s.id})">${Number(s.id)}<span class="${gClass}" style="display:block; font-size:16px;">${gMarker}</span></div>` }).join('');
             updateSettleAndList();
         }
 
@@ -1242,21 +1252,35 @@
         }
 
         function removeStaff() {
-            const raw = prompt('請輸入要移除的師傅號碼，例如 15');
-            if(raw === null) return;
-            const id = Number(String(raw).trim());
-            if(!Number.isInteger(id) || id <= 0) return alert('師傅號碼必須是正整數');
-            if(!staffIds.includes(id)) return alert('找不到這個師傅號碼');
-            const staff = staffData.find(s=>Number(s.id)===id);
+            const ids = staffIds.filter(id => Number(id) > 0 && !permanentlyRemovedIds.has(Number(id))).sort((a,b)=>Number(a)-Number(b));
+            const box = document.getElementById('removeStaffGrid');
+            if (!box) return alert('找不到移除師傅視窗');
+            box.innerHTML = ids.map(id => `
+                <button class="staff-btn" style="border:1px solid #555;" onclick="confirmRemoveStaff(${Number(id)})">
+                    ${Number(id)}
+                </button>`).join('');
+            document.getElementById('removeStaffModal').style.display='flex';
+        }
+
+        function confirmRemoveStaff(id) {
+            id = Number(id);
+            if (!Number.isInteger(id) || id <= 0 || permanentlyRemovedIds.has(id)) return;
+            if (!staffIds.includes(id)) return alert('找不到這個師傅號碼');
+            const staff = staffData.find(s => Number(s.id) === id);
             const hasLogs = !!(staff && Array.isArray(staff.logs) && staff.logs.length);
             const hasBookings = !!(staff && Array.isArray(staff.bookings) && staff.bookings.length);
-            const warning = hasLogs || hasBookings ? '\n這位師傅目前還有未結束的帳目或預約，移除後今天的資料將不再出現在師傅畫面，但歷史帳目仍會保留。' : '';
-            if(!confirm(`確定移除 ${id}號嗎？${warning}`)) return;
-            staffIds.splice(staffIds.indexOf(id),1);
-            staffData = staffData.filter(s=>Number(s.id)!==id);
+            const warning = hasLogs || hasBookings
+                ? '\n這位師傅目前還有帳目或預約，移除後只會從現役師傅選單消失，歷史資料仍保留。'
+                : '';
+            if (!confirm(`確定移除 ${id} 號嗎？${warning}`)) return;
+            staffIds.splice(staffIds.indexOf(id), 1);
+            staffData = staffData.filter(s => Number(s.id) !== id);
+            // 保留歷史紀錄與姓名資料，避免舊帳對不到人；只從現役名單移除。
+            localStorage.setItem('massageStaffIds', JSON.stringify(staffIds));
             save();
+            closeM('removeStaffModal');
             render();
-            showT(`${id}號已從師傅選單移除`);
+            showT(`${id} 已從現役師傅名單移除`);
         }
 
 
