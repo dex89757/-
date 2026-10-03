@@ -511,7 +511,7 @@
                 const data = summary[id];
                 const name = id > 0 ? getStaffDisplayName(id) : getSpecialName(Number(id));
                 grandTotal += data.total;
-                textArray.push(`師傅${name}號，總計${data.total}。`);
+                textArray.push(`師傅${name}，總計${data.total}。`);
             });
             textArray.push(`本月統計數據如下：`);
             textArray.push(`來店總人數${totalPersons}人。`);
@@ -519,6 +519,7 @@
             textArray.push(`簽名總人數${totalSign}人。`);
             textArray.push(`卷總人數${totalCoupon}人。`);
             textArray.push(`本月全部總計${grandTotal}元。`);
+            textArray.push(`本月全部總節數${grandTotal > 0 ? (grandTotal / 800).toFixed(1) : 0}節。`);
 
             copyToClipboard(textArray.join('\n'));
         }
@@ -543,7 +544,7 @@
                 const name = r.id > 0 ? getStaffDisplayName(r.id) : getSpecialName(Number(r.id));
                 gTotal += filteredTotal;
                 if(filteredTotal > 0) {
-                    textArray.push(`師傅${name}號，總計${filteredTotal}。`);
+                    textArray.push(`師傅${name}，總計${filteredTotal}。`);
                 }
             });
 
@@ -986,7 +987,6 @@
                 <div class="summary-item"><span class="summary-label">現金總人數</span><span class="summary-val">${totalCash}</span></div>
                 <div class="summary-item"><span class="summary-label">簽名總人數</span><span class="summary-val">${totalSign}</span></div>
                 <div class="summary-item"><span class="summary-label">卷總人數</span><span class="summary-val">${totalCoupon}</span></div>
-                <div class="summary-item"><span class="summary-label">全部總節數</span><span class="summary-val" style="color:var(--orange);">${grandTotal > 0 ? (grandTotal / 800).toFixed(1) : 0}</span></div>
             </div><div style="margin-top:20px; text-align:right; font-size:22px; color:var(--green); font-weight:bold;">${selMonth}月業績累計：$${grandTotal}</div>`;
             document.getElementById('reportArea').innerHTML = html;
             document.getElementById('reportModal').style.display = 'flex';
